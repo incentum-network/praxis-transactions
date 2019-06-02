@@ -2,22 +2,22 @@ import { Transactions } from "@arkecosystem/crypto";
 import { TransactionTypes } from '@incentum/praxis-client';
 import { 
     canonicalizeJson,
-    ContractActionPayload,
+    GetUnusedOutputsPayload,
 } from '@incentum/praxis-interfaces';
 import ByteBuffer from "bytebuffer";
 import { BaseTransaction } from "./BaseTransaction";
 
 const { schemas } = Transactions;
 
-export class ContractActionTransaction extends BaseTransaction {
-    public static type = TransactionTypes.ContractAction as number;
+export class UnusedOutputsTransaction extends BaseTransaction {
+    public static type = TransactionTypes.UnusedOutputs as number;
 
     public static getSchema(): Transactions.schemas.TransactionSchema {
         return schemas.extend(schemas.transactionBaseSchema, {
-            $id: "contractAction",
+            $id: "unusedOutputs",
             required: ["asset"],
             properties: {
-                type: { transactionType: ContractActionTransaction.type },
+                type: { transactionType: UnusedOutputsTransaction.type },
                 amount: { bignumber: { minimum: 0, maximum: 0 } },
                 asset: {
                     type: "object",
@@ -25,15 +25,11 @@ export class ContractActionTransaction extends BaseTransaction {
                     properties: {
                         payload: {
                             type: "object",
-                            required: ["action"],
+                            required: ["ledger"],
                             properties: {
-                                action: {
-                                    type: "object",
-                                    required: ["nonce"],
-                                    properties: {
-                                        nonce: {
-                                            type: "string",
-                                        },
+                                properties: {
+                                    ledger: {
+                                        type: "string",
                                     },
                                 },
                             },
@@ -46,7 +42,7 @@ export class ContractActionTransaction extends BaseTransaction {
 
     public serialize():  ByteBuffer {
       const { data } = this;
-      const payload = data.asset.payload as ContractActionPayload;  
+      const payload = data.asset.payload as GetUnusedOutputsPayload;  
       const payloadBytes = Buffer.from(canonicalizeJson(payload), "utf8");  
       const buffer = new ByteBuffer(payloadBytes.length, true);
       buffer.append(payloadBytes);

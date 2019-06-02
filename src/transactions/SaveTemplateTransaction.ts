@@ -2,22 +2,22 @@ import { Transactions } from "@arkecosystem/crypto";
 import { TransactionTypes } from '@incentum/praxis-client';
 import { 
     canonicalizeJson,
-    ContractStartPayload,
+    SaveTemplatePayload,
 } from '@incentum/praxis-interfaces';
 import ByteBuffer from "bytebuffer";
 import { BaseTransaction } from "./BaseTransaction";
 
 const { schemas } = Transactions;
 
-export class ContractStartTransaction extends BaseTransaction {
-    public static type = TransactionTypes.ContractStart as number;
+export class SaveTemplateTransaction extends BaseTransaction {
+    public static type = TransactionTypes.SaveTemplate as number;
 
     public static getSchema(): Transactions.schemas.TransactionSchema {
         return schemas.extend(schemas.transactionBaseSchema, {
-            $id: "contractStart",
+            $id: "saveTemplate",
             required: ["asset"],
             properties: {
-                type: { transactionType: ContractStartTransaction.type },
+                type: { transactionType: SaveTemplateTransaction.type },
                 amount: { bignumber: { minimum: 0, maximum: 0 } },
                 asset: {
                     type: "object",
@@ -25,12 +25,9 @@ export class ContractStartTransaction extends BaseTransaction {
                     properties: {
                         payload: {
                             type: "object",
-                            required: ["action", "initialState"],
+                            required: ["template"],
                             properties: {
-                                action: {
-                                    type: "object",
-                                },
-                                initialState: {
+                                template: {
                                     type: "object",
                                 },
                             },
@@ -47,7 +44,7 @@ export class ContractStartTransaction extends BaseTransaction {
 
     public serialize():  ByteBuffer {
         const { data } = this;
-        const payload = data.asset.payload as ContractStartPayload;  
+        const payload = data.asset.payload as SaveTemplatePayload;  
         const payloadBytes = Buffer.from(canonicalizeJson(payload), "utf8"); 
         const buffer = new ByteBuffer(payloadBytes.length + 2, true);
         buffer.writeUint16(payloadBytes.length);

@@ -2,11 +2,67 @@ import { app } from "@arkecosystem/core-container";
 import { Database, EventEmitter, Logger, State, TransactionPool } from "@arkecosystem/core-interfaces";
 import { Handlers, } from "@arkecosystem/core-transactions";
 import { Interfaces, Utils } from "@arkecosystem/crypto";
-import { ActionJson } from "@incentum/praxis-interfaces";
+import { ContractResult, ContractSearchResult, getUnusedOutputs } from "@incentum/praxis-db";
+import { ActionJson, hashJson, OutputJson, TemplateJson } from "@incentum/praxis-interfaces";
 import { UnusedMethodError } from '../errors';
+
+export interface IPraxisWallet {
+  outputs: OutputJson[];
+  instances: ContractResult[];
+  message: string;
+  templates: IWalletTemplate[];
+}
+
+export interface IWalletTemplate {
+  template: TemplateJson;
+  hash: string;
+}
 
 export abstract class BaseTransactionHandler extends Handlers.TransactionHandler {
   protected logger = app.resolvePlugin<Logger.ILogger>("logger");
+
+  public async addInstanceToWallet(sender: State.IWallet, result: ContractResult, transaction: Interfaces.ITransaction): Promise<void> {
+    const wallet = sender as any;
+    const outputs = await getUnusedOutputs({ledger: sender.address});
+    const praxisWallet: IPraxisWallet = wallet.praxis;
+    wallet.praxis = {
+      ...praxisWallet,
+      outputs,
+      instances: praxisWallet.instances.concat([result]),
+      message: 'Contract instance updated',
+    }
+  }
+
+  public addTemplateToWallet(sender: State.IWallet, result: TemplateJson, transaction: Interfaces.ITransaction): void {
+    const wallet = sender as any;
+    const praxisWallet: IPraxisWallet = wallet.praxis;
+    wallet.praxis = {
+      ...praxisWallet,
+      message: `Template saved: ${result.name}`,
+      templates: [result].map((template) => ({ template, hash: hashJson(template)})),
+    }
+  }
+
+  public addTemplatesToWallet(sender: State.IWallet, result: ContractSearchResult, transaction: Interfaces.ITransaction): void {
+    const wallet = sender as any;
+    const praxisWallet: IPraxisWallet = wallet.praxis;
+    wallet.praxis = {
+      ...praxisWallet,
+      message: `Template search: ${result.templates.length} results`,
+      templates: result.templates.map((template) => ({ template, hash: hashJson(template)})),
+    }
+  }
+
+  public async addUnusedOutputs(sender: State.IWallet): Promise<void> {
+    const wallet = sender as any;
+    const outputs = await getUnusedOutputs({ledger: sender.address});
+    const praxisWallet: IPraxisWallet = wallet.praxis;
+    wallet.praxis = {
+      ...praxisWallet,
+      outputs,
+      message: 'Unused outputs updated',
+    }
+  }
 
   public async bootstrap(connection: Database.IConnection, walletManager: State.IWalletManager): Promise<void> {
     return
@@ -37,6 +93,10 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
   }
 
   public calculateFeeFromAction(action: ActionJson): Utils.BigNumber {
+    return new Utils.BigNumber(500000000);
+  }
+
+  public calculateFeeFromTemplate(action: TemplateJson): Utils.BigNumber {
     return new Utils.BigNumber(500000000);
   }
 

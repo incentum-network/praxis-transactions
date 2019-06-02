@@ -57,6 +57,8 @@ export class ContractStartTransactionHandler extends BaseTransactionHandler {
       payload.action.transaction = transaction.id;
       const result: ContractResult = { action: {} as ActionJson, template: {} as TemplateJson, contract: {} as ContractJson }; // await contractStart(payload);
       transaction.data.fee = this.calculateFeeFromAction(result.action)
+      const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
+      await this.addInstanceToWallet(sender, result, transaction);
     } catch (e) {
       throw e;
     }

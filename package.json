@@ -33,9 +33,9 @@
     "@arkecosystem/core-transactions": "^2.4.0-next.7",
     "@arkecosystem/crypto": "^2.4.0-next.7",
     "@incentum/praxis-client": "^0.0.1",
-    "@incentum/praxis-db": "^1.0.342",
-    "@incentum/praxis-contracts": "^1.0.337",
-    "@incentum/praxis-interfaces": "^1.0.339",
+    "@incentum/praxis-db": "^1.0.347",
+    "@incentum/praxis-contracts": "^1.0.338",
+    "@incentum/praxis-interfaces": "^1.0.340",
     "bytebuffer": "^5.0.1"
   },
   "devDependencies": {
@@ -52,7 +52,8 @@
     "regenerator-runtime": "^0.11.1",
     "npm-check-updates": "^3.1.0",
     "cross-env": "^5.2.0",
-    "del-cli": "^1.1.0"
+    "del-cli": "^1.1.0",
+    "mysql": "^2.17.1"
   },
   "jest": {
     "preset": "../../jest-preset.json"

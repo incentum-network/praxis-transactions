@@ -1,6 +1,7 @@
 import { Database, EventEmitter, State, TransactionPool } from "@arkecosystem/core-interfaces";
 import { Interfaces, Transactions } from "@arkecosystem/crypto";
-import { SaveTemplatePayload, TemplateJson } from "@incentum/praxis-interfaces";
+import { existsTemplate, saveTemplate } from "@incentum/praxis-db";
+import { hashJson, SaveTemplatePayload, TemplateJson } from "@incentum/praxis-interfaces";
 import { SaveTemplateTransaction } from "../transactions";
 import { BaseTransactionHandler } from './BaseTransactionHandler'
 
@@ -13,52 +14,31 @@ export class SaveTemplateTransactionHandler extends BaseTransactionHandler {
     return
   }
 
-  public canBeApplied(
-      transaction: Interfaces.ITransaction,
-      wallet: State.IWallet,
-      databaseWalletManager: State.IWalletManager,
-  ): boolean {
-    return true;
-  }
-
-  public verify(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): boolean {
-    return true;
-    /*
-    const senderWallet: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
-    this.logger.info(`senderWallet.multiSignature ${senderWallet.multisignature}`);
-
-    if (senderWallet.multisignature) {
-      transaction.isVerified = senderWallet.verifySignatures(transaction.data);
-    } else {
-      transaction.isVerified = true;
-    }
-
-    return transaction.isVerified;
-    */
-  }
-
   public emitEvents(transaction: Interfaces.ITransaction, emitter: EventEmitter.EventEmitter): void {
       return
   }
 
-  public canEnterTransactionPool(
-      data: Interfaces.ITransactionData,
-      pool: TransactionPool.IConnection,
-      processor: TransactionPool.IProcessor,
-  ): boolean {
-    return true
+  public async exists(payload: SaveTemplatePayload): Promise<boolean> {
+    return await existsTemplate({ template: payload.template})
   }
 
   public async apply(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): Promise<void> {
-    this.logger.info(`apply SaveTemplateTransaction`);
+    const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
     try {
       const payload: SaveTemplatePayload = transaction.data.asset.payload;
-      const result: TemplateJson = payload.template; // await saveTemplate(payload);
-      transaction.data.fee = this.calculateFeeFromTemplate(result);
-      const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
-      this.addTemplateToWallet(sender, result, transaction);
+      if (await this.exists(payload)) {
+        const msg = `apply SaveTemplateTransaction: Template already exists: ${payload.template.name}`;
+        this.logger.warn(msg);
+        this.showWalletErrors(sender, [msg]);
+      } else {
+        const result: TemplateJson = await saveTemplate(payload);
+        transaction.data.fee = this.calculateFeeFromTemplate(result);
+        this.addTemplateToWallet(sender, result, transaction);
+      }
     } catch (e) {
-      throw e;
+      const msg = `apply SaveTemplateTransaction failed: ${e.toString()}`;
+      this.logger.warn(msg);
+      this.showWalletErrors(sender, [msg])
     }
   }
 

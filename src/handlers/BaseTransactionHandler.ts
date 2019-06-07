@@ -2,15 +2,24 @@ import { app } from "@arkecosystem/core-container";
 import { Database, EventEmitter, Logger, State, TransactionPool } from "@arkecosystem/core-interfaces";
 import { Handlers, } from "@arkecosystem/core-transactions";
 import { Interfaces, Transactions, Utils } from "@arkecosystem/crypto";
-import { ContractResult, ContractSearchResult, getUnusedOutputs } from "@incentum/praxis-db";
-import { ActionJson, hashJson, OutputJson, TemplateJson } from "@incentum/praxis-interfaces";
+import { getUnusedOutputs } from "@incentum/praxis-db";
+import { ActionJson, ContractResult, ContractSearchResult, hashJson, MatchSchemasResult, OutputJson, SchemasJson, TemplateJson } from "@incentum/praxis-interfaces";
 import { UnusedMethodError } from '../errors';
+
+export interface ITransactionResult {
+  id: string;
+  status: number;
+  messages: string[];
+}
 
 export interface IPraxisWallet {
   outputs: OutputJson[];
   instances: ContractResult[];
   messages: string[];
-  templates: IWalletTemplate[];
+  schemas: SchemasJson[];
+  templateSearch: IWalletTemplate[];
+  instanceSearch: ContractResult[];
+  lastTransactions: ITransactionResult[];
 }
 
 export interface IWalletTemplate {
@@ -18,63 +27,117 @@ export interface IWalletTemplate {
   hash: string;
 }
 
+const  transactionOk = (transaction: Interfaces.ITransaction): ITransactionResult => {
+  return { status: 0, id: transaction.id, messages: ['ok'] };
+}
+
+const addInstances = (praxis: IPraxisWallet, results: ContractResult[]) => {
+  const instances = praxis.instances.slice(0)
+  for (const result of results) {
+    instances.unshift(result)
+  }
+  return instances.slice(0, MAX_INSTANCES)
+}
+
+const addSchemas = (praxis: IPraxisWallet, result: SchemasJson[]) => {
+  const schemas = praxis.schemas.slice(0)
+  schemas.unshift(result[0])
+  return schemas.slice(0, MAX_SCHEMAS)
+}
+
+const MAX_TRANSACTIONS = 20;
+const MAX_INSTANCES = 50;
+const MAX_SCHEMAS = 20;
 export abstract class BaseTransactionHandler extends Handlers.TransactionHandler {
   protected logger = app.resolvePlugin<Logger.ILogger>("logger");
 
-  public getPraxisFromWallet(wallet): IPraxisWallet {
-    return wallet.praxis || {
+  public praxis(): IPraxisWallet {
+    return {
       outputs: [],
       instances: [],
-      templates: [],
+      schemas: [],
       messages: [],
+      lastTransactions: [],
+      templateSearch: [],
+      instanceSearch: [],
+    };
+  }
+
+  public getPraxisFromWallet(wallet, result: ITransactionResult): IPraxisWallet {
+    const praxis: IPraxisWallet = wallet.praxis || this.praxis();
+    let lastTransactions = praxis.lastTransactions.slice(0)
+    lastTransactions.unshift(result)
+    lastTransactions = lastTransactions.slice(0, MAX_TRANSACTIONS)
+    return {
+      ...praxis,
+      lastTransactions,
     }
   }
 
   public async addInstanceToWallet(sender: State.IWallet, result: ContractResult, transaction: Interfaces.ITransaction): Promise<void> {
     const wallet = sender as any;
     const outputs = await getUnusedOutputs({ledger: sender.address});
-    const praxisWallet = this.getPraxisFromWallet(wallet);
+    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction));
     wallet.praxis = {
       ...praxisWallet,
       outputs,
-      instances: (praxisWallet.instances || []).concat([result]),
+      instances: addInstances(praxisWallet, [result]),
       messages: ['Contract instance updated'],
     }
   }
 
-  public addTemplateToWallet(sender: State.IWallet, result: TemplateJson, transaction: Interfaces.ITransaction): void {
+  public addSearchTemplatesToWallet(sender: State.IWallet, templateSearch: ContractSearchResult, transaction: Interfaces.ITransaction): void {
     const wallet = sender as any;
-    const praxisWallet = this.getPraxisFromWallet(wallet);
+    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction));
     wallet.praxis = {
       ...praxisWallet,
-      messages: [`Template saved: ${result.name}`],
-      templates: [result].map((template) => ({ template, hash: hashJson(template)})),
+      messages: [`Template search: ${templateSearch.templates.length} results`],
+      templateSearch: templateSearch.templates.map((template) => ({ template, hash: hashJson(template)})),
     }
   }
 
-  public addTemplatesToWallet(sender: State.IWallet, result: ContractSearchResult, transaction: Interfaces.ITransaction): void {
+  public addSearchInstancesToWallet(sender: State.IWallet, instanceSearch: ContractResult[], transaction: Interfaces.ITransaction): void {
     const wallet = sender as any;
-    const praxisWallet = this.getPraxisFromWallet(wallet);
+    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction));
     wallet.praxis = {
       ...praxisWallet,
-      messages: [`Template search: ${result.templates.length} results`],
-      templates: result.templates.map((template) => ({ template, hash: hashJson(template)})),
+      messages: [`Instance search: ${instanceSearch.length} results`],
+      instanceSearch,
     }
   }
 
-  public showWalletErrors(sender: State.IWallet, messages: string[]): void {
+  public addMatchSchemasToWallet(sender: State.IWallet, result: MatchSchemasResult, transaction: Interfaces.ITransaction): void {
     const wallet = sender as any;
-    const praxisWallet = this.getPraxisFromWallet(wallet);
+    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction));
+    wallet.praxis = {
+      ...praxisWallet,
+      messages: [`Schemas added`],
+      schemas: addSchemas(praxisWallet, result.schemas),
+    }
+  }
+
+  public showWalletOk(sender: State.IWallet, messages: string[], transaction: Interfaces.ITransaction): void {
+    const wallet = sender as any;
+    const praxisWallet = this.getPraxisFromWallet(wallet, { status: 0, id: transaction.id, messages});
     wallet.praxis = {
       ...praxisWallet,
       messages,
     }
   }
 
-  public async addUnusedOutputs(sender: State.IWallet): Promise<void> {
+  public showWalletErrors(sender: State.IWallet, messages: string[], transaction: Interfaces.ITransaction): void {
+    const wallet = sender as any;
+    const praxisWallet = this.getPraxisFromWallet(wallet, { status: 1, id: transaction.id, messages});
+    wallet.praxis = {
+      ...praxisWallet,
+      messages,
+    }
+  }
+
+  public async addUnusedOutputs(sender: State.IWallet, transaction: Interfaces.ITransaction): Promise<void> {
     const wallet = sender as any;
     const outputs = await getUnusedOutputs({ledger: sender.address});
-    const praxisWallet = this.getPraxisFromWallet(wallet);
+    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction));
     wallet.praxis = {
       ...praxisWallet,
       outputs,

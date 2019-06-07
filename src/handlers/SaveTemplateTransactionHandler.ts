@@ -1,7 +1,7 @@
 import { Database, EventEmitter, State, TransactionPool } from "@arkecosystem/core-interfaces";
 import { Interfaces, Transactions } from "@arkecosystem/crypto";
 import { existsTemplate, saveTemplate } from "@incentum/praxis-db";
-import { hashJson, SaveTemplatePayload, TemplateJson } from "@incentum/praxis-interfaces";
+import { SaveTemplatePayload, TemplateJson } from "@incentum/praxis-interfaces";
 import { SaveTemplateTransaction } from "../transactions";
 import { BaseTransactionHandler } from './BaseTransactionHandler'
 
@@ -29,16 +29,16 @@ export class SaveTemplateTransactionHandler extends BaseTransactionHandler {
       if (await this.exists(payload)) {
         const msg = `apply SaveTemplateTransaction: Template already exists: ${payload.template.name}`;
         this.logger.warn(msg);
-        this.showWalletErrors(sender, [msg]);
+        this.showWalletErrors(sender, [msg], transaction);
       } else {
         const result: TemplateJson = await saveTemplate(payload);
         transaction.data.fee = this.calculateFeeFromTemplate(result);
-        this.addTemplateToWallet(sender, result, transaction);
+        this.showWalletOk(sender, ['Save Template Successful'], transaction);
       }
     } catch (e) {
       const msg = `apply SaveTemplateTransaction failed: ${e.toString()}`;
       this.logger.warn(msg);
-      this.showWalletErrors(sender, [msg])
+      this.showWalletErrors(sender, [msg], transaction)
     }
   }
 

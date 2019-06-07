@@ -1,7 +1,7 @@
 import { Database, EventEmitter, State, TransactionPool } from "@arkecosystem/core-interfaces";
 import { Interfaces, Transactions } from "@arkecosystem/crypto";
-import { contractSearch, ContractSearchResult } from "@incentum/praxis-db";
-import { ContractSearchPayload } from "@incentum/praxis-interfaces";
+import { contractSearch } from "@incentum/praxis-db";
+import { ContractSearchPayload, ContractSearchResult } from "@incentum/praxis-interfaces";
 import { SearchTemplateTransaction } from "../transactions";
 import { BaseTransactionHandler } from './BaseTransactionHandler'
 
@@ -23,11 +23,11 @@ export class SearchTemplateTransactionHandler extends BaseTransactionHandler {
     try {
       const payload: ContractSearchPayload = transaction.data.asset.payload;
       const result: ContractSearchResult = await contractSearch(payload);
-      this.addTemplatesToWallet(sender, result, transaction);
+      this.addSearchTemplatesToWallet(sender, result, transaction);
     } catch (e) {
       const msg = `apply SearchTemplateTransaction failed: ${e.toString()}`;
       this.logger.warn(msg);
-      this.showWalletErrors(sender, [msg])
+      this.showWalletErrors(sender, [msg], transaction)
     }
   }
 

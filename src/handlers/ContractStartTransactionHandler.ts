@@ -1,7 +1,7 @@
 import { Database, EventEmitter, State, TransactionPool } from "@arkecosystem/core-interfaces";
 import { Interfaces, Transactions } from "@arkecosystem/crypto";
-import { ContractResult, contractStart } from "@incentum/praxis-db";
-import { ContractStartPayload } from "@incentum/praxis-interfaces";
+import { contractStart } from "@incentum/praxis-db";
+import { ContractResult, ContractStartPayload } from "@incentum/praxis-interfaces";
 import { ContractStartTransaction } from "../transactions";
 import { BaseTransactionHandler } from './BaseTransactionHandler'
 
@@ -29,7 +29,7 @@ export class ContractStartTransactionHandler extends BaseTransactionHandler {
     } catch (e) {
       const msg = `apply ContractStartTransaction failed: ${e.toString()}`;
       this.logger.warn(msg);
-      this.showWalletErrors(sender, [msg]);
+      this.showWalletErrors(sender, [msg], transaction);
     }
   }
 

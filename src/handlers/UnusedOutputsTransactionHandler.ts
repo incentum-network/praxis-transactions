@@ -19,11 +19,11 @@ export class UnusedOutputsTransactionHandler extends BaseTransactionHandler {
   public async apply(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): Promise<void> {
     const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
     try {
-      await this.addUnusedOutputs(sender);
+      await this.addUnusedOutputs(sender, transaction);
     } catch (e) {
       const msg = `apply UnusedOutputsTransaction failed: ${e.toString()}`;
       this.logger.warn(msg);
-      this.showWalletErrors(sender, [msg])
+      this.showWalletErrors(sender, [msg], transaction)
     }
   }
 

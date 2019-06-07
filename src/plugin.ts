@@ -2,10 +2,16 @@ import { Container, Logger } from "@arkecosystem/core-interfaces";
 import { Handlers } from "@arkecosystem/core-transactions";
 import { startConnection } from "@incentum/praxis-db";
 import { defaults } from "./defaults";
-import { ContractActionTransactionHandler } from "./handlers/ContractActionTransactionHandler";
-import { ContractStartTransactionHandler } from "./handlers/ContractStartTransactionHandler";
-import { SaveTemplateTransactionHandler } from "./handlers/SaveTemplateTransactionHandler";
-import { SearchTemplateTransactionHandler } from "./handlers/SearchTemplateTransactionHandler";
+import { ContractActionTransactionHandler } from "./handlers";
+import { ContractFromActionTransactionHandler } from "./handlers";
+import { ContractFromInstanceTransactionHandler } from "./handlers";
+import { ContractStartTransactionHandler } from "./handlers";
+import { MatchSchemasTransactionHandler } from "./handlers";
+import { SaveSchemasTransactionHandler } from "./handlers";
+import { SaveTemplateTransactionHandler } from "./handlers";
+import { SearchInstanceTransactionHandler } from "./handlers";
+import { SearchTemplateTransactionHandler } from "./handlers";
+import { UnusedOutputsTransactionHandler } from "./handlers";
 
 const opts = {
   type: 'mysql',
@@ -24,16 +30,28 @@ export const plugin: Container.IPluginDescriptor = {
   async register(container: Container.IContainer, options) {
     await startConnection(opts as any);
     container.resolvePlugin<Logger.ILogger>("logger").info("Registering Praxis Transactions");
-    Handlers.Registry.registerCustomTransactionHandler(ContractStartTransactionHandler);
     Handlers.Registry.registerCustomTransactionHandler(ContractActionTransactionHandler);
+    Handlers.Registry.registerCustomTransactionHandler(ContractFromActionTransactionHandler);
+    Handlers.Registry.registerCustomTransactionHandler(ContractFromInstanceTransactionHandler);
+    Handlers.Registry.registerCustomTransactionHandler(ContractStartTransactionHandler);
+    Handlers.Registry.registerCustomTransactionHandler(MatchSchemasTransactionHandler);
     Handlers.Registry.registerCustomTransactionHandler(SaveTemplateTransactionHandler);
+    Handlers.Registry.registerCustomTransactionHandler(SaveSchemasTransactionHandler);
+    Handlers.Registry.registerCustomTransactionHandler(SearchInstanceTransactionHandler);
     Handlers.Registry.registerCustomTransactionHandler(SearchTemplateTransactionHandler);
+    Handlers.Registry.registerCustomTransactionHandler(UnusedOutputsTransactionHandler);
   },
   async deregister(container: Container.IContainer, options) {
     container.resolvePlugin<Logger.ILogger>("logger").info("Deregistering Praxis Transactions");
-    Handlers.Registry.deregisterCustomTransactionHandler(ContractStartTransactionHandler);
     Handlers.Registry.deregisterCustomTransactionHandler(ContractActionTransactionHandler);
+    Handlers.Registry.deregisterCustomTransactionHandler(ContractFromActionTransactionHandler);
+    Handlers.Registry.deregisterCustomTransactionHandler(ContractFromInstanceTransactionHandler);
+    Handlers.Registry.deregisterCustomTransactionHandler(ContractStartTransactionHandler);
+    Handlers.Registry.deregisterCustomTransactionHandler(MatchSchemasTransactionHandler);
     Handlers.Registry.deregisterCustomTransactionHandler(SaveTemplateTransactionHandler);
+    Handlers.Registry.deregisterCustomTransactionHandler(SaveSchemasTransactionHandler);
+    Handlers.Registry.deregisterCustomTransactionHandler(SearchInstanceTransactionHandler);
     Handlers.Registry.deregisterCustomTransactionHandler(SearchTemplateTransactionHandler);
+    Handlers.Registry.deregisterCustomTransactionHandler(UnusedOutputsTransactionHandler);
   }
 };

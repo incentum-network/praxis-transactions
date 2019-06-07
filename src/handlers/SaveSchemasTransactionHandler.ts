@@ -1,13 +1,13 @@
 import { Database, EventEmitter, State, TransactionPool } from "@arkecosystem/core-interfaces";
 import { Interfaces, Transactions } from "@arkecosystem/crypto";
-import { contractAction } from "@incentum/praxis-db";
-import { ContractActionPayload, ContractResult } from "@incentum/praxis-interfaces";
-import { ContractActionTransaction } from "../transactions";
+import { saveSchemas } from "@incentum/praxis-db";
+import { SaveSchemasPayload, SchemasJson } from "@incentum/praxis-interfaces";
+import { SaveSchemasTransaction } from "../transactions";
 import { BaseTransactionHandler } from './BaseTransactionHandler'
 
-export class ContractActionTransactionHandler extends BaseTransactionHandler {
+export class SaveSchemasTransactionHandler extends BaseTransactionHandler {
   public getConstructor(): Transactions.TransactionConstructor {
-    return ContractActionTransaction
+    return SaveSchemasTransaction
   }
 
   public async bootstrap(connection: Database.IConnection, walletManager: State.IWalletManager): Promise<void> {
@@ -18,23 +18,30 @@ export class ContractActionTransactionHandler extends BaseTransactionHandler {
       return
   }
 
+  public async exists(payload: SaveSchemasPayload): Promise<boolean> {
+    return false; // return await existsSchemas({ schemas: payload.schemas})
+  }
+
   public async apply(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): Promise<void> {
     const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
     try {
-      const payload: ContractActionPayload = transaction.data.asset.payload;
-      payload.action.transaction = transaction.id;
-      const result: ContractResult = await contractAction(payload.action);
-      transaction.data.fee = this.calculateFeeFromAction(result.action);
-      await this.addInstanceToWallet(sender, result, transaction);
+      const payload: SaveSchemasPayload = transaction.data.asset.payload;
+      if (await this.exists(payload)) {
+        const msg = `apply SaveSchemasTransaction: Schemas already exists: ${payload.schemas.templateHash}`;
+        this.logger.warn(msg);
+        this.showWalletErrors(sender, [msg], transaction);
+      } else {
+        const result: SchemasJson = await saveSchemas(payload);
+      }
     } catch (e) {
-      const msg = `apply ContractActionTransaction failed: ${e.toString()}`
+      const msg = `apply SaveSchemasTransaction failed: ${e.toString()}`;
       this.logger.warn(msg);
       this.showWalletErrors(sender, [msg], transaction)
     }
   }
 
   public async revert(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): Promise<void> {
-    this.logger.info(`revert ContractActionTransaction`);
+    this.logger.info(`revert SaveSchemasTransaction`);
   }
 
 }

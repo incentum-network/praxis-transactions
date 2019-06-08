@@ -12,6 +12,8 @@ import { SaveTemplateTransactionHandler } from "./handlers";
 import { SearchInstanceTransactionHandler } from "./handlers";
 import { SearchTemplateTransactionHandler } from "./handlers";
 import { UnusedOutputsTransactionHandler } from "./handlers";
+import { AccountToOutputTransactionHandler } from "./handlers";
+import { OutputToAccountTransactionHandler } from "./handlers";
 
 const opts = {
   type: 'mysql',
@@ -40,6 +42,8 @@ export const plugin: Container.IPluginDescriptor = {
     Handlers.Registry.registerCustomTransactionHandler(SearchInstanceTransactionHandler);
     Handlers.Registry.registerCustomTransactionHandler(SearchTemplateTransactionHandler);
     Handlers.Registry.registerCustomTransactionHandler(UnusedOutputsTransactionHandler);
+    Handlers.Registry.registerCustomTransactionHandler(AccountToOutputTransactionHandler);
+    Handlers.Registry.registerCustomTransactionHandler(OutputToAccountTransactionHandler);
   },
   async deregister(container: Container.IContainer, options) {
     container.resolvePlugin<Logger.ILogger>("logger").info("Deregistering Praxis Transactions");
@@ -53,5 +57,7 @@ export const plugin: Container.IPluginDescriptor = {
     Handlers.Registry.deregisterCustomTransactionHandler(SearchInstanceTransactionHandler);
     Handlers.Registry.deregisterCustomTransactionHandler(SearchTemplateTransactionHandler);
     Handlers.Registry.deregisterCustomTransactionHandler(UnusedOutputsTransactionHandler);
+    Handlers.Registry.deregisterCustomTransactionHandler(AccountToOutputTransactionHandler);
+    Handlers.Registry.deregisterCustomTransactionHandler(OutputToAccountTransactionHandler);
   }
 };

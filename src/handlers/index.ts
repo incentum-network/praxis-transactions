@@ -8,3 +8,5 @@ export * from "./SaveTemplateTransactionHandler";
 export * from "./SearchInstanceTransactionHandler";
 export * from "./SearchTemplateTransactionHandler";
 export * from "./UnusedOutputsTransactionHandler";
+export * from "./AccountToOutputTransactionHandler";
+export * from "./OutputToAccountTransactionHandler";

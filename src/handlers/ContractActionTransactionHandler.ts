@@ -24,7 +24,7 @@ export class ContractActionTransactionHandler extends BaseTransactionHandler {
       const payload: ContractActionPayload = transaction.data.asset.payload;
       payload.action.transaction = transaction.id;
       const result: ContractResult = await contractAction(payload.action);
-      transaction.data.fee = this.calculateFeeFromAction(result.action);
+      // transaction.data.fee = this.calculateFeeFromAction(result.action);
       await this.addInstanceToWallet(sender, result, transaction);
     } catch (e) {
       const msg = `apply ContractActionTransaction failed: ${e.toString()}`

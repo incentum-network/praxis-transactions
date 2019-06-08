@@ -2,33 +2,13 @@ import { app } from "@arkecosystem/core-container";
 import { Database, EventEmitter, Logger, State, TransactionPool } from "@arkecosystem/core-interfaces";
 import { Handlers, } from "@arkecosystem/core-transactions";
 import { Interfaces, Transactions, Utils } from "@arkecosystem/crypto";
+import { IPraxisWallet, ITransactionResult } from "@incentum/praxis-client";
 import { getUnusedOutputs } from "@incentum/praxis-db";
 import { ActionJson, ContractResult, ContractSearchResult, hashJson, MatchSchemasResult, OutputJson, SchemasJson, TemplateJson } from "@incentum/praxis-interfaces";
 import { UnusedMethodError } from '../errors';
 
-export interface ITransactionResult {
-  id: string;
-  status: number;
-  messages: string[];
-}
-
-export interface IPraxisWallet {
-  outputs: OutputJson[];
-  instances: ContractResult[];
-  messages: string[];
-  schemas: SchemasJson[];
-  templateSearch: IWalletTemplate[];
-  instanceSearch: ContractResult[];
-  lastTransactions: ITransactionResult[];
-}
-
-export interface IWalletTemplate {
-  template: TemplateJson;
-  hash: string;
-}
-
-const  transactionOk = (transaction: Interfaces.ITransaction): ITransactionResult => {
-  return { status: 0, id: transaction.id, messages: ['ok'] };
+const  transactionOk = (transaction: Interfaces.ITransaction, result: any): ITransactionResult => {
+  return { status: 0, id: transaction.id, messages: ['ok'], result };
 }
 
 const addInstances = (praxis: IPraxisWallet, results: ContractResult[]) => {
@@ -77,7 +57,7 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
   public async addInstanceToWallet(sender: State.IWallet, result: ContractResult, transaction: Interfaces.ITransaction): Promise<void> {
     const wallet = sender as any;
     const outputs = await getUnusedOutputs({ledger: sender.address});
-    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction));
+    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction, result));
     wallet.praxis = {
       ...praxisWallet,
       outputs,
@@ -88,7 +68,7 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
 
   public addSearchTemplatesToWallet(sender: State.IWallet, templateSearch: ContractSearchResult, transaction: Interfaces.ITransaction): void {
     const wallet = sender as any;
-    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction));
+    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction, {}));
     wallet.praxis = {
       ...praxisWallet,
       messages: [`Template search: ${templateSearch.templates.length} results`],
@@ -98,7 +78,7 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
 
   public addSearchInstancesToWallet(sender: State.IWallet, instanceSearch: ContractResult[], transaction: Interfaces.ITransaction): void {
     const wallet = sender as any;
-    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction));
+    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction, {}));
     wallet.praxis = {
       ...praxisWallet,
       messages: [`Instance search: ${instanceSearch.length} results`],
@@ -108,7 +88,7 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
 
   public addMatchSchemasToWallet(sender: State.IWallet, result: MatchSchemasResult, transaction: Interfaces.ITransaction): void {
     const wallet = sender as any;
-    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction));
+    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction, result));
     wallet.praxis = {
       ...praxisWallet,
       messages: [`Schemas added`],
@@ -116,9 +96,9 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
     }
   }
 
-  public showWalletOk(sender: State.IWallet, messages: string[], transaction: Interfaces.ITransaction): void {
+  public showWalletOk(sender: State.IWallet, messages: string[], transaction: Interfaces.ITransaction, result: any): void {
     const wallet = sender as any;
-    const praxisWallet = this.getPraxisFromWallet(wallet, { status: 0, id: transaction.id, messages});
+    const praxisWallet = this.getPraxisFromWallet(wallet, { status: 0, id: transaction.id, messages, result});
     wallet.praxis = {
       ...praxisWallet,
       messages,
@@ -134,14 +114,14 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
     }
   }
 
-  public async addUnusedOutputs(sender: State.IWallet, transaction: Interfaces.ITransaction): Promise<void> {
+  public async addUnusedOutputs(sender: State.IWallet, transaction: Interfaces.ITransaction, msg: string = 'Unused outputs updated'): Promise<void> {
     const wallet = sender as any;
     const outputs = await getUnusedOutputs({ledger: sender.address});
-    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction));
+    const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction, {}));
     wallet.praxis = {
       ...praxisWallet,
       outputs,
-      messages: ['Unused outputs updated'],
+      messages: [msg],
     }
   }
 

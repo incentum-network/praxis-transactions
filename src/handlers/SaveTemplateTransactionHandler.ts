@@ -32,8 +32,8 @@ export class SaveTemplateTransactionHandler extends BaseTransactionHandler {
         this.showWalletErrors(sender, [msg], transaction);
       } else {
         const result: TemplateJson = await saveTemplate(payload);
-        transaction.data.fee = this.calculateFeeFromTemplate(result);
-        this.showWalletOk(sender, ['Save Template Successful'], transaction);
+        // transaction.data.fee = this.calculateFeeFromTemplate(result);
+        this.showWalletOk(sender, ['Save Template Successful'], transaction, result);
       }
     } catch (e) {
       const msg = `apply SaveTemplateTransaction failed: ${e.toString()}`;

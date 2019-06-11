@@ -45,19 +45,22 @@ export class ContractActionTransaction extends BaseTransaction {
     }
 
     public serialize():  ByteBuffer {
-      const { data } = this;
-      const payload = data.asset.payload as ContractActionPayload;  
-      const payloadBytes = Buffer.from(canonicalizeJson(payload), "utf8");  
-      const buffer = new ByteBuffer(payloadBytes.length, true);
-      buffer.append(payloadBytes);
-      return buffer;
-  }
+        const { data } = this;
+        const payload = data.asset.payload as ContractActionPayload;  
+        const payloadBytes = Buffer.from(canonicalizeJson(payload), "utf8"); 
+        const buffer = new ByteBuffer(payloadBytes.length + 2, true);
+        buffer.writeUint16(payloadBytes.length);
+        buffer.append(payloadBytes, "hex");
+        return buffer;
+    }
 
   public deserialize(buf:  ByteBuffer):  void {
     const { data } = this;
-    const json = buf.buffer.toString("utf8");
+    const jsonLength = buf.readUint16();
+    const json = buf.readString(jsonLength)
     data.asset = {
         payload: JSON.parse(json)
     };
   }
+
 }

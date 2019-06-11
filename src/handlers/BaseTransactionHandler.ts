@@ -15,6 +15,7 @@ import {
 } from "@incentum/praxis-db";
 import { 
   ActionJson, 
+  CoinJson, 
   ContractResult, 
   ContractSearchResult, 
   createStartActionJson, 
@@ -22,7 +23,7 @@ import {
   hashString, 
   MatchSchemasResult, 
   SchemasJson, 
-  TemplateJson 
+  TemplateJson
 } from "@incentum/praxis-interfaces";
 import { FindOrStartInstanceError, TemplateMissingError, UnusedMethodError } from '../errors';
 
@@ -68,8 +69,10 @@ const accountToOutputReducer = `
 const outputToAccountReducer = `
 (
   $x.assert.equal($action.ledger, $state.owner, 'invalid owner');
+  $x.assert.equal($count($inputs), 1, 'only one input allowed');
   $input := $inputs[0];
   $output := $input.output;
+  $x.assert.equal($count($output.coins), 1, 'only one coin allowed');
   $coin := $output.coins[0];
   $x.assert.isTrue($x.coin.same($coin, $state.total), 'coin mismatch');
   $total := $x.minus($state.total.amount, $coin.amount);
@@ -117,10 +120,13 @@ const MAX_INSTANCES = 50;
 const MAX_SCHEMAS = 20;
 export abstract class BaseTransactionHandler extends Handlers.TransactionHandler {
   protected static accountOutputsTemplate = accountOutputsTemplateName;
+  protected static accountOutputsMint = "";
+  protected static accountOutputsCoinSymbol = "ITUM";
+  protected static accountOutputsCoinDecimals = 8;
   protected static accountToOutputReducer = "accountToOutput";
   protected static outputToAccountReducer = "outputToAccount";
-  private static instanceIndex: number = 0;
 
+  protected instance: ContractResult;
   protected logger = app.resolvePlugin<Logger.ILogger>("logger");
   protected owner: string;
   protected templateOwner: string;
@@ -208,13 +214,24 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
     }
   }
 
+  public isPraxisCoin(coin: CoinJson): boolean {
+    return coin.symbol === BaseTransactionHandler.accountOutputsCoinSymbol 
+      && coin.mint === BaseTransactionHandler.accountOutputsMint 
+      && coin.decimals === BaseTransactionHandler.accountOutputsCoinDecimals;
+  }
+
   public async addUnusedOutputs(sender: State.IWallet, transaction: Interfaces.ITransaction, msg: string = 'Unused outputs updated'): Promise<void> {
     const wallet = sender as any;
     const outputs = await getUnusedOutputs({ledger: sender.address});
     const praxisWallet = this.getPraxisFromWallet(wallet, transactionOk(transaction, {}));
     wallet.praxis = {
       ...praxisWallet,
-      outputs: outputs.outputs,
+      outputs: outputs.outputs.map((o) => {
+        if (o.coins.length === 1 && this.isPraxisCoin(o.coins[0])) {
+          (o as any).isPraxisOutput = true;
+        }
+        return o;
+      }),
       messages: [msg],
     }
   }
@@ -238,6 +255,7 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
         return await this.startInstance(key);
       }
     } catch (e) {
+      console.log('FindOrStartInstanceError', e)
       throw new FindOrStartInstanceError(e.toString())
     }
   }
@@ -256,8 +274,8 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
     const action = createStartActionJson(this.owner, template);
     action.transaction = key;
     action.form = {
-      'symbol': 'ITUM',
-      'decimals': 8,
+      'symbol': BaseTransactionHandler.accountOutputsCoinSymbol,
+      'decimals': BaseTransactionHandler.accountOutputsCoinDecimals,
     }
     this.logger.info(`Instance for template ${accountOutputsTemplateName}, started`);
     return await contractStart({ action, initialState: {}, key});

@@ -7,7 +7,6 @@ import { BaseTransactionHandler } from './BaseTransactionHandler';
 
 export class AccountToOutputTransactionHandler extends BaseTransactionHandler {
 
-  private instance: ContractResult;
   public getConstructor(): Transactions.TransactionConstructor {
     return AccountToOutputTransaction
   }
@@ -15,6 +14,7 @@ export class AccountToOutputTransactionHandler extends BaseTransactionHandler {
   public async bootstrap(connection: Database.IConnection, walletManager: State.IWalletManager): Promise<void> {
     await super.bootstrap(connection, walletManager);
     this.instance = await this.findOrStartPraxisInstance(this.owner);
+    BaseTransactionHandler.accountOutputsMint = hashJson(this.instance.contract);
   }
 
   public emitEvents(transaction: Interfaces.ITransaction, emitter: EventEmitter.EventEmitter): void {

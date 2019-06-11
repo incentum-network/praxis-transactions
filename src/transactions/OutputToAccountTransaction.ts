@@ -14,7 +14,7 @@ export class OutputToAccountTransaction extends BaseTransaction {
 
     public static getSchema(): Transactions.schemas.TransactionSchema {
         return schemas.extend(schemas.transactionBaseSchema, {
-            $id: "contractStart",
+            $id: "outputToAccount",
             required: ["asset"],
             properties: {
                 type: { transactionType: OutputToAccountTransaction.type },

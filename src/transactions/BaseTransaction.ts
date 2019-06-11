@@ -4,5 +4,5 @@ import { Transactions } from "@arkecosystem/crypto";
 
 export abstract class BaseTransaction extends Transactions.Transaction {
     // @ts-ignore
-    private logger = app.resolvePlugin<Logger.ILogger>("logger");
+    protected logger = app.resolvePlugin<Logger.ILogger>("logger");
 }

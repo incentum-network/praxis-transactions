@@ -1,21 +1,20 @@
-import { Database, EventEmitter, State, TransactionPool } from "@arkecosystem/core-interfaces";
+import { Database, EventEmitter, State } from "@arkecosystem/core-interfaces";
 import { Interfaces, Transactions, Utils } from "@arkecosystem/crypto";
 import { contractAction } from "@incentum/praxis-db";
-import { AccountToOutputPayload, ContractJson, createActionActionJson } from "@incentum/praxis-interfaces";
+import { AccountToOutputPayload, ContractJson, ContractResult, createActionActionJson, hashJson, toContractJson } from "@incentum/praxis-interfaces";
 import { AccountToOutputTransaction } from "../transactions";
 import { BaseTransactionHandler } from './BaseTransactionHandler';
 
 export class AccountToOutputTransactionHandler extends BaseTransactionHandler {
 
-  public reducer: string;
-  public contract: ContractJson;
+  private instance: ContractResult;
   public getConstructor(): Transactions.TransactionConstructor {
     return AccountToOutputTransaction
   }
 
   public async bootstrap(connection: Database.IConnection, walletManager: State.IWalletManager): Promise<void> {
-    this.reducer = 'accountToOutput';
-    this.contract = {} as ContractJson;
+    await super.bootstrap(connection, walletManager);
+    this.instance = await this.findOrStartPraxisInstance(this.owner);
   }
 
   public emitEvents(transaction: Interfaces.ITransaction, emitter: EventEmitter.EventEmitter): void {
@@ -27,8 +26,14 @@ export class AccountToOutputTransactionHandler extends BaseTransactionHandler {
     try {
       const payload: AccountToOutputPayload = transaction.data.asset.payload;
       if (sender.balance.isGreaterThanOrEqualTo(new Utils.BigNumber(payload.amount))) {
-        const action = createActionActionJson(sender.address, this.contract, this.reducer)
+        const action = createActionActionJson(this.owner, this.instance.contract, BaseTransactionHandler.accountToOutputReducer)
         action.transaction = transaction.id;
+        action.form = {
+          amount: payload.amount,
+          sender: sender.address,
+          title: 'ITUM tokens from wallet',
+          subtitle: 'ITUM tokens moved from the Praxis wallet',
+        }
         await contractAction(action);
         sender.balance = sender.balance.minus(new Utils.BigNumber(payload.amount));
         await this.addUnusedOutputs(sender, transaction, `${payload.amount} account tokens converted to output`);  

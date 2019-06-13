@@ -140,6 +140,8 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
       lastTransactions: [],
       templateSearch: [],
       instanceSearch: [],
+      username: '',
+      balance: '',
     };
   }
 

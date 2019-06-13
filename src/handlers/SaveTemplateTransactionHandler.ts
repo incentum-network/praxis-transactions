@@ -1,6 +1,6 @@
 import { Database, EventEmitter, State, TransactionPool } from "@arkecosystem/core-interfaces";
 import { Interfaces, Transactions } from "@arkecosystem/crypto";
-import { existsTemplate, saveTemplate } from "@incentum/praxis-db";
+import { existsTemplate, rollbackTemplate, saveTemplate } from "@incentum/praxis-db";
 import { SaveTemplatePayload, TemplateJson } from "@incentum/praxis-interfaces";
 import { SaveTemplateTransaction } from "../transactions";
 import { BaseTransactionHandler } from './BaseTransactionHandler'
@@ -32,7 +32,6 @@ export class SaveTemplateTransactionHandler extends BaseTransactionHandler {
         this.showWalletErrors(sender, [msg], transaction);
       } else {
         const result: TemplateJson = await saveTemplate(payload);
-        // transaction.data.fee = this.calculateFeeFromTemplate(result);
         this.showWalletOk(sender, ['Save Template Successful'], transaction, result);
       }
     } catch (e) {
@@ -44,6 +43,8 @@ export class SaveTemplateTransactionHandler extends BaseTransactionHandler {
 
   public async revert(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): Promise<void> {
     this.logger.info(`revert SaveTemplateTransaction`);
+    const payload: SaveTemplatePayload = transaction.data.asset.payload;
+    await rollbackTemplate(payload.template);
   }
 
 }

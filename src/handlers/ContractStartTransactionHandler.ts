@@ -1,6 +1,6 @@
 import { Database, EventEmitter, State, TransactionPool } from "@arkecosystem/core-interfaces";
 import { Interfaces, Transactions } from "@arkecosystem/crypto";
-import { contractStart } from "@incentum/praxis-db";
+import { contractStart, rollbackContract } from "@incentum/praxis-db";
 import { ContractResult, ContractStartPayload } from "@incentum/praxis-interfaces";
 import { ContractStartTransaction } from "../transactions";
 import { BaseTransactionHandler } from './BaseTransactionHandler'
@@ -24,7 +24,6 @@ export class ContractStartTransactionHandler extends BaseTransactionHandler {
       const payload: ContractStartPayload = transaction.data.asset.payload;
       payload.action.transaction = transaction.id;
       const result: ContractResult = await contractStart(payload);
-      // transaction.data.fee = this.calculateFeeFromAction(result.action)
       await this.addInstanceToWallet(sender, result, transaction);
     } catch (e) {
       const msg = `apply ContractStartTransaction failed: ${e.toString()}`;
@@ -35,6 +34,8 @@ export class ContractStartTransactionHandler extends BaseTransactionHandler {
 
   public async revert(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): Promise<void> {
     this.logger.info(`revert ContractStartTransaction`);
+    const payload: ContractStartPayload = transaction.data.asset.payload;
+    await rollbackContract(payload.key);
   }
 
 }

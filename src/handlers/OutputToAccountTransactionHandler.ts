@@ -1,7 +1,24 @@
-import { Database, EventEmitter, State, TransactionPool } from "@arkecosystem/core-interfaces";
-import { Interfaces, Transactions, Utils } from "@arkecosystem/crypto";
-import { contractAction } from "@incentum/praxis-db";
-import { createActionActionJson, OutputHashableJson, OutputToAccountPayload } from "@incentum/praxis-interfaces";
+import { 
+  Database, 
+  EventEmitter, 
+  State 
+} from "@arkecosystem/core-interfaces";
+import { 
+  Interfaces, 
+  Transactions, 
+  Utils 
+} from "@arkecosystem/crypto";
+import { 
+  contractAction, 
+  rollbackLastAction 
+} from "@incentum/praxis-db";
+import { 
+  createActionActionJson, 
+  hashJson, 
+  OutputHashableJson, 
+  OutputToAccountPayload, 
+  toContractJson 
+} from "@incentum/praxis-interfaces";
 import { OutputToAccountTransaction } from "../transactions";
 import { BaseTransactionHandler } from './BaseTransactionHandler';
 
@@ -14,6 +31,8 @@ export class OutputToAccountTransactionHandler extends BaseTransactionHandler {
   public async bootstrap(connection: Database.IConnection, walletManager: State.IWalletManager): Promise<void> {
     await super.bootstrap(connection, walletManager);
     this.instance = await this.findOrStartPraxisInstance(this.owner);
+    this.logger.info(`accountToOutput contractKey: ${this.contractKey}`);
+    this.logger.info(`accountToOutput mint: ${BaseTransactionHandler.accountOutputsMint}`);
   }
 
   public emitEvents(transaction: Interfaces.ITransaction, emitter: EventEmitter.EventEmitter): void {
@@ -46,7 +65,12 @@ export class OutputToAccountTransactionHandler extends BaseTransactionHandler {
   }
 
   public async revert(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): Promise<void> {
-    this.logger.info(`revert AccountToOutputTransaction`);
+    const payload: OutputToAccountPayload = transaction.data.asset.payload;
+    const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
+    const contractHash = hashJson(toContractJson(this.instance.contract))
+    await rollbackLastAction(contractHash)
+    const amount = this.getCoinAmount(payload.input.output);
+    sender.balance = sender.balance.minus(new Utils.BigNumber(amount));
+    this.logger.info(`revert OutputToAccountTransaction`);
   }
-
 }

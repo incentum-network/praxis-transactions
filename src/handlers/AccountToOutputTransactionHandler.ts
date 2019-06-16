@@ -1,6 +1,6 @@
 import { Database, EventEmitter, State } from "@arkecosystem/core-interfaces";
 import { Interfaces, Transactions, Utils } from "@arkecosystem/crypto";
-import { contractAction } from "@incentum/praxis-db";
+import { contractAction, rollbackLastAction } from "@incentum/praxis-db";
 import { AccountToOutputPayload, ContractJson, ContractResult, createActionActionJson, hashJson, toContractJson } from "@incentum/praxis-interfaces";
 import { AccountToOutputTransaction } from "../transactions";
 import { BaseTransactionHandler } from './BaseTransactionHandler';
@@ -15,6 +15,8 @@ export class AccountToOutputTransactionHandler extends BaseTransactionHandler {
     await super.bootstrap(connection, walletManager);
     this.instance = await this.findOrStartPraxisInstance(this.owner);
     BaseTransactionHandler.accountOutputsMint = hashJson(this.instance.contract);
+    this.logger.info(`accountToOutput contractKey: ${this.contractKey}`);
+    this.logger.info(`accountToOutput mint: ${BaseTransactionHandler.accountOutputsMint}`);
   }
 
   public emitEvents(transaction: Interfaces.ITransaction, emitter: EventEmitter.EventEmitter): void {
@@ -36,7 +38,7 @@ export class AccountToOutputTransactionHandler extends BaseTransactionHandler {
         }
         await contractAction(action);
         sender.balance = sender.balance.minus(new Utils.BigNumber(payload.amount));
-        await this.addUnusedOutputs(sender, transaction, `${payload.amount} account tokens converted to output`);  
+        await this.addUnusedOutputs(sender, transaction, `${payload.amount} account tokens converted to output`);
       } else {
         this.showWalletErrors(sender, ['Not enough tokens to create output'], transaction)
       }
@@ -48,6 +50,11 @@ export class AccountToOutputTransactionHandler extends BaseTransactionHandler {
   }
 
   public async revert(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): Promise<void> {
+    const payload: AccountToOutputPayload = transaction.data.asset.payload;
+    const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
+    const contractHash = hashJson(toContractJson(this.instance.contract))
+    await rollbackLastAction(contractHash)
+    sender.balance = sender.balance.plus(new Utils.BigNumber(payload.amount));
     this.logger.info(`revert AccountToOutputTransaction`);
   }
 

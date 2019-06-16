@@ -1,4 +1,5 @@
 export * from './AccountToOutputTransaction';
+export * from './CoinToOutputTransaction';
 export * from './ContractActionTransaction';
 export * from './ContractFromActionTransaction';
 export * from './ContractFromInstanceTransaction';

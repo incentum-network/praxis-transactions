@@ -2,16 +2,14 @@ import { app } from "@arkecosystem/core-container";
 import { Database, EventEmitter, Logger, State, TransactionPool } from "@arkecosystem/core-interfaces";
 import { Handlers, } from "@arkecosystem/core-transactions";
 import { Interfaces, Utils } from "@arkecosystem/crypto";
-import { Identities } from "@incentum/crypto";
-import { Crypto } from "@incentum/crypto";
 import { IPraxisWallet, ITransactionResult } from "@incentum/praxis-client";
+import { hashContractKey } from '@incentum/praxis-contracts';
 import { 
   contractSearch,
   contractStart,
   getUnusedOutputs, 
   instanceSearch,
   saveTemplate,
-  Template, 
 } from "@incentum/praxis-db";
 import { 
   ActionJson, 
@@ -20,9 +18,9 @@ import {
   ContractSearchResult, 
   createStartActionJson, 
   hashJson, 
-  hashString, 
+  HashKeyString, 
   MatchSchemasResult, 
-  SchemasJson, 
+  SchemasJson,
   TemplateJson
 } from "@incentum/praxis-interfaces";
 import { FindOrStartInstanceError, TemplateMissingError, UnusedMethodError } from '../errors';
@@ -66,6 +64,17 @@ const accountToOutputReducer = `
 )
 `
 
+const coinToOutputReducer = `
+(
+  $x.assert.equal($action.ledger, $state.owner, 'invalid owner');
+  $minted := $x.mint($form.sender, $state.total.symbol, $form.amount, $state.total.decimals, $form.title, $form.subtitle, '', $action.tags);
+  $total := $x.plus($state.total.amount, $form.amount);
+  $coin := $merge([$state.total, { 'amount': $total}]);
+  $newState := $merge([$state, { 'total': $coin}]);
+  $x.result($newState, [], [$minted])
+)
+`
+
 const outputToAccountReducer = `
 (
   $x.assert.equal($action.ledger, $state.owner, 'invalid owner');
@@ -84,6 +93,7 @@ const outputToAccountReducer = `
 `
 
 const accountOutputsTemplateName = 'AccountOutputs'
+const accountOutputsContractKey = `contracts/${accountOutputsTemplateName}`;
 const accountOutputsTemplate = (ledger: string): TemplateJson => {
   return {
     ledger,
@@ -91,7 +101,7 @@ const accountOutputsTemplate = (ledger: string): TemplateJson => {
     versionMajor: 1,
     versionMinor: 0,
     versionPatch: 0,
-    description: 'Account to Outputs',
+    description: 'Coins to Outputs',
     other: {},
     tags: [],
     reducers: [
@@ -104,6 +114,11 @@ const accountOutputsTemplate = (ledger: string): TemplateJson => {
         type: 'accountToOutput',
         language: 'jsonata',
         code: accountToOutputReducer,
+      },
+      {
+        type: 'coinToOutput',
+        language: 'jsonata',
+        code: coinToOutputReducer,
       },
       {
         type: 'outputToAccount',
@@ -123,9 +138,11 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
   protected static accountOutputsMint = "";
   protected static accountOutputsCoinSymbol = "ITUM";
   protected static accountOutputsCoinDecimals = 8;
+  protected static coinToOutputReducer = "coinToOutput";
   protected static accountToOutputReducer = "accountToOutput";
   protected static outputToAccountReducer = "outputToAccount";
 
+  protected contractKey: HashKeyString;
   protected instance: ContractResult;
   protected logger = app.resolvePlugin<Logger.ILogger>("logger");
   protected owner: string;
@@ -218,7 +235,7 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
 
   public isPraxisCoin(coin: CoinJson): boolean {
     return coin.symbol === BaseTransactionHandler.accountOutputsCoinSymbol 
-      && coin.mint === BaseTransactionHandler.accountOutputsMint 
+      && coin.mint === BaseTransactionHandler.accountOutputsMint
       && coin.decimals === BaseTransactionHandler.accountOutputsCoinDecimals;
   }
 
@@ -244,17 +261,18 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
   }
 
   public async findOrStartPraxisInstance(address: string): Promise<ContractResult> {
-    const key = hashString(`${address}/${accountOutputsTemplateName}`);
-    this.logger.info(`Starting template instance, ${accountOutputsTemplateName}, key: ${key}`);
+    this.contractKey = hashContractKey(this.owner, accountOutputsContractKey);
+    this.logger.info(`contractKey: ${this.contractKey}`);
+    this.logger.info(`Starting template instance, ${accountOutputsTemplateName}, key: ${this.contractKey}`);
     try {
-      const instances = await instanceSearch({ ledger: '', search: key});
+      const instances = await instanceSearch({ ledger: '', search: this.contractKey});
       this.logger.info(`Instances, ${instances.length}, initializing`);
-      const accountOutputs = instances.filter((i) => i.contract.key ===  key);
+      const accountOutputs = instances.filter((i) => i.contract.key ===  this.contractKey);
       if (accountOutputs.length > 0) {
         this.logger.info(`Template instance found, ${accountOutputsTemplateName}`);
         return accountOutputs[0];
       } else {
-        return await this.startInstance(key);
+        return await this.startInstance();
       }
     } catch (e) {
       console.log('FindOrStartInstanceError', e)
@@ -267,20 +285,20 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
     return await saveTemplate({ template: accountOutputsTemplate(this.templateOwner)})
   }
 
-  public async startInstance(key: string) {
+  public async startInstance() {
     this.logger.info(`Contract instance not found, ${accountOutputsTemplateName}, initializing`);
     const templates = await contractSearch({search: accountOutputsTemplateName});
     let template = templates.templates.find((t) => t.ledger === this.templateOwner);
     if (!template) { template = await this.saveAccountOutputTemplate(); }
     this.logger.info(`Found template ${accountOutputsTemplateName}, starting instance`);
     const action = createStartActionJson(this.owner, template);
-    action.transaction = key;
+    action.transaction = this.contractKey;
     action.form = {
       'symbol': BaseTransactionHandler.accountOutputsCoinSymbol,
       'decimals': BaseTransactionHandler.accountOutputsCoinDecimals,
     }
     this.logger.info(`Instance for template ${accountOutputsTemplateName}, started`);
-    return await contractStart({ action, initialState: {}, key});
+    return await contractStart({ action, initialState: {}, key: accountOutputsContractKey});
 }
 
   public canBeApplied(
@@ -316,19 +334,19 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
   }
 
   public applyToSenderInPool(transaction: any, poolWalletManager: State.IWalletManager): void {
-    // ignore
+    // throw new UnusedMethodError('applyToSenderInPool should not get called in Praxis BaseTransactionHandler')
   }
 
   public revertForSenderInPool(transaction: any, poolWalletManager: State.IWalletManager): void {
-    // ignore
+    // throw new UnusedMethodError('revertForToSenderInPool should not get called in Praxis BaseTransactionHandler')
   }
 
   public applyToRecipientInPool(transaction: any, poolWalletManager: State.IWalletManager): void {
-    // ignore
+    // throw new UnusedMethodError('applyToRecipientInPool should not get called in Praxis BaseTransactionHandler')
   }
 
   public revertForRecipientInPool(transaction: any, poolWalletManager: State.IWalletManager): void {
-    // ignore
+    // throw new UnusedMethodError('revertForRecipientInPool should not get called in Praxis BaseTransactionHandler')
   }
 
   protected applyToSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {

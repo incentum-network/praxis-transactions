@@ -1,3 +1,4 @@
+export * from "./CoinToOutputTransactionHandler";
 export * from "./ContractActionTransactionHandler";
 export * from "./ContractFromActionTransactionHandler";
 export * from "./ContractFromInstanceTransactionHandler";

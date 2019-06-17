@@ -1,6 +1,6 @@
 import { Container, Logger } from "@arkecosystem/core-interfaces";
 import { Handlers } from "@arkecosystem/core-transactions";
-import { Identities } from "@incentum/crypto";
+import { Identities, Utils } from "@incentum/crypto";
 import { ILedger } from "@incentum/praxis-client";
 import { startConnection } from "@incentum/praxis-db";
 import { defaults } from "./defaults";
@@ -16,7 +16,8 @@ import { AccountToOutputTransactionHandler } from "./handlers";
 import { OutputToAccountTransactionHandler } from "./handlers";
 import { SaveTemplateTransactionHandler } from "./handlers";
 import { SearchInstanceTransactionHandler } from "./handlers";
-import { arkListener, ethListener, IArkOptions, IWeb3Options } from './listeners';
+import { CoinToOutputTransactionHandler } from "./handlers";
+import { arkListener, ethListener, IArkOptions, IWeb3Options, IPriceOptions, updatePricesOptions } from './listeners';
 
 const opts = {
   type: 'mysql',
@@ -28,22 +29,9 @@ const opts = {
   entities: [],
 }
 
-const startListeners = async (logger, ledger: ILedger, ethAddress: string, ethStartingBlock: number) => {
-  const ethOpts: IWeb3Options = {
-    ledger,
-    delay: 60 * 1000,
-    logger,
-    ethAddress,
-    ethStartingBlock,
-    endpoint: 'https://mainnet.infura.io/v3/2fb1e3eabcc34c9c85fb000202ac7ce6',
-  }
-  logger.debug(`starting eth listener`)
+const startListeners = async (ethOpts: IWeb3Options, arkOpts: IArkOptions) => {
+  ethOpts.logger.debug(`starting eth and ark listeners`)
   await ethListener(ethOpts);
-
-  const arkOpts: IArkOptions = {
-    ledger,
-    logger,
-  }
   await arkListener(arkOpts);
 }
 
@@ -65,17 +53,46 @@ export const plugin: Container.IPluginDescriptor = {
     const logger: Logger.ILogger = container.resolvePlugin<Logger.ILogger>("logger")
     logger.debug(`registering praxis plugin`)
     
-    if (options.authorizedCoinSenderPassphrase && options.ethAddress) {
+    if (options.authorizedCoinSenderPassphrase) {
+      const arkAddress: string = `${options.arkAddress}`
       const ethAddress: string = `${options.ethAddress}`
       const mnemonic: string = `${options.authorizedCoinSenderPassphrase}`
-      const ethStartingBlock: number = Number(`${options.authorizedCoinSenderPassphrase}`)
-      logger.debug(`found ethAddress, starting listeners: ${ethAddress}`)
-      logger.debug(`found authorizedCoinSenderPassphrase, starting listeners: ${mnemonic}`)
+      const ethStartingBlock: number = Number(`${options.ethStartingBlock}`)
+      const ethEndpoint: string = `${options.ethEndpoint}`
+      const arkEndpoint: string = `${options.arkEndpoint}`
+      const itum: number = Number(`${options.itumPrice}`)
+      const ethDiscount: number = Number(`${options.itumPrice}`)
+      const arkDiscount: number = Number(`${options.itumPrice}`)
       ledger = {
         ledger: Identities.Address.fromPassphrase(mnemonic),
         mnemonic,
       }
-      await startListeners(logger, ledger, ethAddress, ethStartingBlock)
+      const ethOpts: IWeb3Options = {
+        ledger,
+        delay: 15 * 1000,
+        logger,
+        ethAddress,
+        ethStartingBlock,
+        endpoint: ethEndpoint,
+      }
+      console.log('ethOpts listener', ethOpts)
+      const arkOpts: IArkOptions = {
+        ledger,
+        logger,
+        delay: 15 * 1000,
+        address: arkAddress,
+        endpoint: arkEndpoint,
+      }
+      console.log('arkOpts listener', arkOpts)
+      const priceOpts: IPriceOptions = {
+        itum,
+        itumPrice: new Utils.BigNumber(itum),
+        ethDiscount: new Utils.BigNumber(ethDiscount),
+        arkDiscount: new Utils.BigNumber(arkDiscount),  
+      }
+      console.log('priceOpts listener', priceOpts)
+      updatePricesOptions(priceOpts)
+      await startListeners(ethOpts, arkOpts)
     }
 
     await startConnection(opts as any);
@@ -92,6 +109,7 @@ export const plugin: Container.IPluginDescriptor = {
     Handlers.Registry.registerCustomTransactionHandler(UnusedOutputsTransactionHandler);
     Handlers.Registry.registerCustomTransactionHandler(AccountToOutputTransactionHandler);
     Handlers.Registry.registerCustomTransactionHandler(OutputToAccountTransactionHandler);
+    Handlers.Registry.registerCustomTransactionHandler(CoinToOutputTransactionHandler);
   },
   async deregister(container: Container.IContainer, options) {
     container.resolvePlugin<Logger.ILogger>("logger").info("Deregistering Praxis Transactions");
@@ -107,5 +125,6 @@ export const plugin: Container.IPluginDescriptor = {
     Handlers.Registry.deregisterCustomTransactionHandler(UnusedOutputsTransactionHandler);
     Handlers.Registry.deregisterCustomTransactionHandler(AccountToOutputTransactionHandler);
     Handlers.Registry.deregisterCustomTransactionHandler(OutputToAccountTransactionHandler);
+    Handlers.Registry.deregisterCustomTransactionHandler(CoinToOutputTransactionHandler);
   }
 };

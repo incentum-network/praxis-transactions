@@ -2,11 +2,14 @@ import { Logger } from '@arkecosystem/core-interfaces';
 import { Utils } from '@arkecosystem/crypto';
 import { ILedger, txCoinToOutput } from '@incentum/praxis-client';
 import { CoinToOutputPayload } from '@incentum/praxis-interfaces';
-import ethTx from 'ethereumjs-tx';
-import ethUtil from 'ethereumjs-util';
+import EthTransaction from 'ethereumjs-tx';
+import { BN, bufferToHex } from 'ethereumjs-util';
+import secp256k1 from 'secp256k1';
 import Web3 from 'web3';
 import { Transaction } from 'web3-core';
-import { delayFunc, ethPrice, ethToItum, itumPrice, updatePrices } from './prices'
+import * as Web3Utils from 'web3-utils'
+import { delayFunc, ethPrice, ethToItum, priceOpts, updatePrices } from './prices'
+
 
 export interface IWeb3Options {
   ledger: ILedger
@@ -18,31 +21,33 @@ export interface IWeb3Options {
 }
 
 const processTransaction = async (t:Transaction, options: IWeb3Options): Promise<void> => {
-  options.logger.debug(`processTransaction: ${t.value}`)
-  const tx: ethTx.Transaction = toEthTransaction(t)
-  const publicKey = tx.getSenderPublicKey().toString('hex')
+  options.logger.debug(`processTransaction: ${t.hash}`)
+  const tx: EthTransaction = toEthTransaction(t)
+  const uc = new Uint8Array([0x04])
+  const rawPublicKey = Buffer.concat([uc, tx.getSenderPublicKey()])
+  const compressed = secp256k1.publicKeyConvert(rawPublicKey, true)
+  const publicKey = compressed.toString('hex')
   const payload: CoinToOutputPayload = {
     coin: 'ETH',
     coinPrice: ethPrice.toString(),
-    itumPrice: itumPrice.toString(),
-    coinAmount: `${t.value}`,
+    itumPrice: priceOpts.itumPrice.toString(),
+    coinAmount: Web3Utils.fromWei(`${t.value}`),
     itumAmount: ethToItum(`${t.value}`).toString(),
     to: t.to,
     publicKey,
     hash: t.hash,
   }
-  console.log(`processTransaction payload`, payload)
   await txCoinToOutput(payload, options.ledger)
 }
 
-const toEthTransaction = (tx: Transaction): ethTx.Transaction => {
+const toEthTransaction = (tx: Transaction): EthTransaction => {
   const data = (tx as any).input
-  return (new ethTx.Transaction({
+  return (new EthTransaction({
     nonce: tx.nonce,
-    gasPrice: ethUtil.bufferToHex(new ethUtil.BN(tx.gasPrice).toBuffer()),
+    gasPrice: bufferToHex(new BN(tx.gasPrice).toBuffer()),
     gasLimit: tx.gas,
     to: tx.to,
-    value: ethUtil.bufferToHex(new ethUtil.BN(tx.value).toBuffer()),
+    value: bufferToHex(new BN(tx.value).toBuffer()),
     data,
     chainId: 1,
     r: tx.r,
@@ -69,11 +74,13 @@ export const ethListener = async (options: IWeb3Options): Promise<void> => {
       logger.debug(`current ethereum block: ${currentBlock}`)
       for (i = currentBlock; i >= lastBlock; --i) {
         const block = await eth.getBlock(i, true)
-        console.log('got block ', block.number)
         if (block && block.transactions) {
           block.transactions.forEach((t: Transaction) => {
+            // if (transactions.length === 0 && i === currentBlock) {
+            //  transactions.push(t)
+            // }
             if (address === t.to) {
-              console.log('eth transaction match to', t)
+              // console.log('eth transaction match to', t)
               if (t.to !== t.from) {
                 transactions.push(t)
               }
@@ -91,7 +98,7 @@ export const ethListener = async (options: IWeb3Options): Promise<void> => {
       options.logger.error(`Error processing ethereum block ${i}, ${e}`)
     }
 
-    delayFunc(processTransactions, delay * 10)
+    delayFunc(processTransactions, 60000 * 1)
   }
 
   console.log(`ethListener delay: ${delay}`)

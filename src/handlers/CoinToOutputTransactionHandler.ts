@@ -1,5 +1,5 @@
 import { Database, EventEmitter, State } from "@arkecosystem/core-interfaces";
-import { Identities, Interfaces, Transactions } from "@arkecosystem/crypto";
+import { Identities, Interfaces, Transactions, Utils } from "@arkecosystem/crypto";
 import { contractAction, rollbackLastAction } from "@incentum/praxis-db";
 import { CoinToOutputPayload, createActionActionJson, hashJson, toContractJson } from "@incentum/praxis-interfaces";
 import { getAuthorizedLedger } from '../plugin'
@@ -42,16 +42,18 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
     const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
     try {
       const payload: CoinToOutputPayload = transaction.data.asset.payload;
-        const action = createActionActionJson(this.owner, this.instance.contract, BaseTransactionHandler.coinToOutputReducer)
-        action.transaction = transaction.id;
-        action.form = {
-          amount: payload.itumAmount,
-          sender: Identities.Address.fromPublicKey(payload.publicKey),
-          title: `ITUM tokens from ${payload.coin}`,
-          subtitle: `ITUM tokens purchased from ${payload.coinAmount} ${payload.coin}`,
-        }
-        await contractAction(action);
-        await this.addUnusedOutputs(sender, transaction, `${payload.coinAmount} ${payload.coin} tokens converted to ${payload.itumAmount} `);  
+      console.log('CoinToOutputTransaction: payload', payload)
+      const action = createActionActionJson(this.owner, this.instance.contract, BaseTransactionHandler.coinToOutputReducer)
+      action.transaction = transaction.id;
+      action.form = {
+        amount: payload.itumAmount,
+        sender: Identities.Address.fromPublicKey(payload.publicKey),
+        title: `ITUM tokens from ${payload.coin}`,
+        subtitle: `ITUM tokens purchased from ${payload.coinAmount} ${payload.coin}`,
+      }
+      await contractAction(action);
+      const itumDisplayAmount = new Utils.BigNumber(payload.itumAmount).shiftedBy(-8).toString()
+      await this.addUnusedOutputs(sender, transaction, `${payload.coinAmount} ${payload.coin} tokens converted to ${itumDisplayAmount} `);  
     } catch (e) {
       const msg = `apply CoinToOutputTransaction failed: ${e.toString()}`;
       this.logger.warn(msg);

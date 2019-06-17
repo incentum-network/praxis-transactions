@@ -43,6 +43,7 @@ export const ethToItum = (wei: string): Utils.BigNumber => {
 }
 
 export const arkToItum = (arks: string): Utils.BigNumber => {
+  console.log('arkToItum', priceOpts)
   const ark = new Utils.BigNumber(arks)
   return arkPrice.dividedBy(priceOpts.itumPrice).multipliedBy(ark).multipliedBy(priceOpts.arkDiscount)
 }

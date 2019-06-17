@@ -31,7 +31,7 @@ const opts = {
 
 const startListeners = async (ethOpts: IWeb3Options, arkOpts: IArkOptions) => {
   ethOpts.logger.debug(`starting eth and ark listeners`)
-  await ethListener(ethOpts);
+  // await ethListener(ethOpts);
   await arkListener(arkOpts);
 }
 
@@ -60,9 +60,9 @@ export const plugin: Container.IPluginDescriptor = {
       const ethStartingBlock: number = Number(`${options.ethStartingBlock}`)
       const ethEndpoint: string = `${options.ethEndpoint}`
       const arkEndpoint: string = `${options.arkEndpoint}`
-      const itum: number = Number(`${options.itumPrice}`)
-      const ethDiscount: number = Number(`${options.itumPrice}`)
-      const arkDiscount: number = Number(`${options.itumPrice}`)
+      const itum: number = Number(`${options.itum}`)
+      const ethDiscount: number = Number(`${options.ethDiscount}`)
+      const arkDiscount: number = Number(`${options.arkDiscount}`)
       ledger = {
         ledger: Identities.Address.fromPassphrase(mnemonic),
         mnemonic,

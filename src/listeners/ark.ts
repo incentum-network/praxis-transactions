@@ -44,33 +44,18 @@ const getTransactionsForRecipient = async (endpoint: string, recipientId: string
     type: ARK_TRANSFER_TYPE,
     timestamp: {
       from,
-      to: 0,
     }
   }
+  console.log('getTransactionsForRecipient', post)
   try {
     const response = await axios.post(url, post)
+    console.log('getTransactionsForRecipient', response.data)
     return response.data.data
   } catch (e) {
+    console.log('ark failed', e)
     return []
   }
 } 
-
-const processTransaction = async (transaction: IArkTransaction, options: IArkOptions) => {
-    options.logger.debug(`processTransaction: ${transaction.id}`)
-
-    const payload: CoinToOutputPayload = {
-      coin: 'ARK',
-      coinPrice: arkPrice.toString(),
-      itumPrice: priceOpts.itumPrice.toString(),
-      coinAmount: new Utils.BigNumber(`${transaction.amount}`).shiftedBy(-8).toString(),
-      itumAmount: arkToItum(`${transaction.amount}`).toString(),
-      to: transaction.sender,
-      publicKey: transaction.senderPublicKey,
-      hash: transaction.id,
-    }
-    await txCoinToOutput(payload, options.ledger)
-  
-}
 
 export const arkListener = async (options: IArkOptions): Promise<void> => {
   const logger = options.logger
@@ -79,17 +64,33 @@ export const arkListener = async (options: IArkOptions): Promise<void> => {
   const processTransactions = async () => {
     logger.debug(`starting process transactions for ark: ${options.address}`)
 
+    const processTransaction = async (transaction: IArkTransaction, options: IArkOptions) => {
+      options.logger.debug(`processTransaction: ${transaction.id}`)
+  
+      const payload: CoinToOutputPayload = {
+        coin: 'ARK',
+        coinPrice: arkPrice.toString(),
+        itumPrice: priceOpts.itumPrice.toString(),
+        coinAmount: new Utils.BigNumber(`${transaction.amount}`).shiftedBy(-8).toString(),
+        itumAmount: arkToItum(`${transaction.amount}`).toString(),
+        to: transaction.recipient,
+        publicKey: transaction.senderPublicKey,
+        hash: transaction.id,
+      }
+      await txCoinToOutput(payload, options.ledger)  
+    }
+  
     try {
       await updatePrices()
       const transactions = await getTransactionsForRecipient(options.endpoint, options.address, from)
       transactions.forEach(async (t) => {
         await processTransaction(t, options)
+        from = t.timestamp.epoch - 1
       })
     } catch (e) {
+      console.log('error in ark transactions', e)
       options.logger.error(`Error processing ark transactions, ${e}`)
     }
-    await updatePrices()
-    from = new Date().getTime()
     delayFunc(processTransactions, 60000 * 1)
   }
   console.log(`arkListener delay: ${options.delay}`)

@@ -47,6 +47,7 @@ const startReducer = `
 (
   $newState := {
     'owner': $action.ledger,
+    'hashes': {},
     'total': $x.coin.new(0, $form.symbol, $form.decimals)
   };
   $x.result($newState)
@@ -67,10 +68,13 @@ const accountToOutputReducer = `
 const coinToOutputReducer = `
 (
   $x.assert.equal($action.ledger, $state.owner, 'invalid owner');
+  $exists := $lookup($state.hashes, $form.hash);
+  $x.assert.isNotOk($exists, 'hash already exists');
+  $hashes := $merge([$state.hashes, { $form.hash: true }]);
   $minted := $x.mint($form.sender, $state.total.symbol, $form.amount, $state.total.decimals, $form.title, $form.subtitle, '', $action.tags);
   $total := $x.plus($state.total.amount, $form.amount);
   $coin := $merge([$state.total, { 'amount': $total}]);
-  $newState := $merge([$state, { 'total': $coin}]);
+  $newState := $merge([$state, { 'total': $coin}, { 'hashes': $hashes }]);
   $x.result($newState, [], [$minted])
 )
 `

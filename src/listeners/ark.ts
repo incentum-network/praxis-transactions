@@ -85,7 +85,9 @@ export const arkListener = async (options: IArkOptions): Promise<void> => {
       const transactions = await getTransactionsForRecipient(options.endpoint, options.address, from)
       transactions.forEach(async (t) => {
         await processTransaction(t, options)
-        from = t.timestamp.epoch - 1
+        // TODO need to set from right here, seconds since start of blockchain?
+        // from = t.timestamp.epoch - 1
+        from = 0
       })
     } catch (e) {
       console.log('error in ark transactions', e)

@@ -45,7 +45,9 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
       console.log('CoinToOutputTransaction: payload', payload)
       const action = createActionActionJson(this.owner, this.instance.contract, BaseTransactionHandler.coinToOutputReducer)
       action.transaction = transaction.id;
+      const hash = payload.hash.slice(0, 16); // enough for collisions
       action.form = {
+        hash,
         amount: payload.itumAmount,
         sender: Identities.Address.fromPublicKey(payload.publicKey),
         title: `ITUM tokens from ${payload.coin}`,
@@ -55,8 +57,9 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
       const itumDisplayAmount = new Utils.BigNumber(payload.itumAmount).shiftedBy(-8).toString()
       await this.addUnusedOutputs(sender, transaction, `${payload.coinAmount} ${payload.coin} tokens converted to ${itumDisplayAmount} `);  
     } catch (e) {
-      const msg = `apply CoinToOutputTransaction failed: ${e.toString()}`;
+      const msg = `apply CoinToOutputTransaction failed: ${e})}`;
       this.logger.warn(msg);
+      this.logger.warn(e);
       this.showWalletErrors(sender, [msg], transaction);
     }
   }

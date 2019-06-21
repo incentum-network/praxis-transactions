@@ -17,7 +17,7 @@ import { OutputToAccountTransactionHandler } from "./handlers";
 import { SaveTemplateTransactionHandler } from "./handlers";
 import { SearchInstanceTransactionHandler } from "./handlers";
 import { CoinToOutputTransactionHandler } from "./handlers";
-import { arkListener, ethListener, IArkOptions, IWeb3Options, IPriceOptions, updatePricesOptions } from './listeners';
+import { arkListener, ethListener, IArkOptions, IPriceOptions, IWeb3Options, updatePricesOptions } from './listeners';
 
 const opts = {
   type: 'mysql',
@@ -63,8 +63,9 @@ export const plugin: Container.IPluginDescriptor = {
       const itum: number = Number(`${options.itum}`)
       const ethDiscount: number = Number(`${options.ethDiscount}`)
       const arkDiscount: number = Number(`${options.arkDiscount}`)
+      const network: number = Number(`${options.network}`)
       ledger = {
-        ledger: Identities.Address.fromPassphrase(mnemonic),
+        ledger: Identities.Address.fromPassphrase(mnemonic, network),
         mnemonic,
       }
       const ethOpts: IWeb3Options = {
@@ -109,6 +110,7 @@ export const plugin: Container.IPluginDescriptor = {
     Handlers.Registry.registerCustomTransactionHandler(UnusedOutputsTransactionHandler);
     Handlers.Registry.registerCustomTransactionHandler(AccountToOutputTransactionHandler);
     Handlers.Registry.registerCustomTransactionHandler(OutputToAccountTransactionHandler);
+    logger.info("Registering CoinToOutputTransactionHandler");
     Handlers.Registry.registerCustomTransactionHandler(CoinToOutputTransactionHandler);
   },
   async deregister(container: Container.IContainer, options) {

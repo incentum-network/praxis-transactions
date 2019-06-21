@@ -49,7 +49,6 @@ const getTransactionsForRecipient = async (endpoint: string, recipientId: string
   console.log('getTransactionsForRecipient', post)
   try {
     const response = await axios.post(url, post)
-    console.log('getTransactionsForRecipient', response.data)
     return response.data.data
   } catch (e) {
     console.log('ark failed', e)
@@ -86,8 +85,7 @@ export const arkListener = async (options: IArkOptions): Promise<void> => {
       transactions.forEach(async (t) => {
         await processTransaction(t, options)
         // TODO need to set from right here, seconds since start of blockchain?
-        // from = t.timestamp.epoch - 1
-        from = 0
+        from = t.timestamp.epoch
       })
     } catch (e) {
       console.log('error in ark transactions', e)

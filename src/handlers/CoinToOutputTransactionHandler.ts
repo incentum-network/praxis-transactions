@@ -16,10 +16,13 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
 
   public async bootstrap(connection: Database.IConnection, walletManager: State.IWalletManager): Promise<void> {
     await super.bootstrap(connection, walletManager);
+    const ledger = getAuthorizedLedger()
+    console.log('coinToOutput bootstrap', ledger)
+    this.authorizedSenderPublicKey = Identities.PublicKey.fromPassphrase(ledger.mnemonic)
     this.instance = await this.findOrStartPraxisInstance(this.owner);
-    this.authorizedSenderPublicKey = Identities.PublicKey.fromPassphrase(getAuthorizedLedger().mnemonic)
-    this.logger.info(`accountToOutput contractKey: ${this.contractKey}`);
-    this.logger.info(`accountToOutput mint: ${BaseTransactionHandler.accountOutputsMint}`);
+    this.logger.info(`coinToOutput authorizedSenderPublicKey: ${this.authorizedSenderPublicKey}`);
+    this.logger.info(`coinToOutput contractKey: ${this.contractKey}`);
+    this.logger.info(`coinToOutput mint: ${BaseTransactionHandler.accountOutputsMint}`);
   }
 
   public canBeApplied(
@@ -27,10 +30,12 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
     wallet: State.IWallet,
     databaseWalletManager: State.IWalletManager,
   ): boolean {
+    this.logger.debug(`coinToOutput canBeApplied: ${this.authorizedSenderPublicKey} === ${transaction.data.senderPublicKey}`);
     return transaction.data.senderPublicKey === this.authorizedSenderPublicKey;
   }
 
   public verify(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): boolean {
+    this.logger.debug(`coinToOutput verify: ${this.authorizedSenderPublicKey} === ${transaction.data.senderPublicKey}`);
     return transaction.data.senderPublicKey === this.authorizedSenderPublicKey && super.verify(transaction, walletManager);
   }
 
@@ -42,7 +47,6 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
     const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
     try {
       const payload: CoinToOutputPayload = transaction.data.asset.payload;
-      console.log('CoinToOutputTransaction: payload', payload)
       const action = createActionActionJson(this.owner, this.instance.contract, BaseTransactionHandler.coinToOutputReducer)
       action.transaction = transaction.id;
       const hash = payload.hash.slice(0, 16); // enough for collisions
@@ -50,14 +54,14 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
         hash,
         amount: payload.itumAmount,
         sender: Identities.Address.fromPublicKey(payload.publicKey),
-        title: `ITUM tokens from ${payload.coin}`,
-        subtitle: `ITUM tokens purchased from ${payload.coinAmount} ${payload.coin}`,
+        title: `PRAX tokens from ${payload.coin}`,
+        subtitle: `PRAX tokens purchased from ${payload.coinAmount} ${payload.coin}`,
       }
       await contractAction(action);
       const itumDisplayAmount = new Utils.BigNumber(payload.itumAmount).shiftedBy(-8).toString()
       await this.addUnusedOutputs(sender, transaction, `${payload.coinAmount} ${payload.coin} tokens converted to ${itumDisplayAmount} `);  
     } catch (e) {
-      const msg = `apply CoinToOutputTransaction failed: ${e})}`;
+      const msg = `apply CoinToOutputTransaction failed`;
       this.logger.warn(msg);
       this.logger.warn(e);
       this.showWalletErrors(sender, [msg], transaction);

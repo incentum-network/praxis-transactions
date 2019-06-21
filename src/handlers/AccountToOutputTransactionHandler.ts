@@ -33,8 +33,8 @@ export class AccountToOutputTransactionHandler extends BaseTransactionHandler {
         action.form = {
           amount: payload.amount,
           sender: sender.address,
-          title: 'ITUM tokens from wallet',
-          subtitle: 'ITUM tokens moved from the Praxis wallet',
+          title: 'PRAX tokens from wallet',
+          subtitle: 'PRAX tokens moved from the Praxis wallet',
         }
         await contractAction(action);
         sender.balance = sender.balance.minus(new Utils.BigNumber(payload.amount));

@@ -140,7 +140,7 @@ const MAX_SCHEMAS = 20;
 export abstract class BaseTransactionHandler extends Handlers.TransactionHandler {
   protected static accountOutputsTemplate = accountOutputsTemplateName;
   protected static accountOutputsMint = "";
-  protected static accountOutputsCoinSymbol = "ITUM";
+  protected static accountOutputsCoinSymbol = "PRAX";
   protected static accountOutputsCoinDecimals = 8;
   protected static coinToOutputReducer = "coinToOutput";
   protected static accountToOutputReducer = "accountToOutput";

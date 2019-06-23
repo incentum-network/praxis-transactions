@@ -40,6 +40,7 @@ export class OutputToAccountTransactionHandler extends BaseTransactionHandler {
   }
 
   public async apply(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): Promise<void> {
+    // TODO if wallet isn't created, it looks like it will create one, so should be ok. Needs to fail otherwise.
     const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
     try {
       const payload: OutputToAccountPayload = transaction.data.asset.payload;

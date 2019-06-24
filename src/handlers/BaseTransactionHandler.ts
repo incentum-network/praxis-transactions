@@ -97,7 +97,7 @@ const outputToAccountReducer = `
 `
 
 const accountOutputsTemplateName = 'AccountOutputs'
-const accountOutputsContractKey = `contracts/${accountOutputsTemplateName}`;
+const accountOutputsContractKey = `token/PRAX/0`;
 const accountOutputsTemplate = (ledger: string): TemplateJson => {
   return {
     ledger,
@@ -140,8 +140,8 @@ const MAX_SCHEMAS = 20;
 export abstract class BaseTransactionHandler extends Handlers.TransactionHandler {
   protected static accountOutputsTemplate = accountOutputsTemplateName;
   protected static accountOutputsMint = "";
-  protected static accountOutputsCoinSymbol = "PRAX";
-  protected static accountOutputsCoinDecimals = 8;
+  protected static praxSymbol = "PRAX";
+  protected static praxDecimals = 8;
   protected static coinToOutputReducer = "coinToOutput";
   protected static accountToOutputReducer = "accountToOutput";
   protected static outputToAccountReducer = "outputToAccount";
@@ -238,9 +238,9 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
   }
 
   public isPraxisCoin(coin: CoinJson): boolean {
-    return coin.symbol === BaseTransactionHandler.accountOutputsCoinSymbol 
+    return coin.symbol === BaseTransactionHandler.praxSymbol 
       && coin.mint === BaseTransactionHandler.accountOutputsMint
-      && coin.decimals === BaseTransactionHandler.accountOutputsCoinDecimals;
+      && coin.decimals === BaseTransactionHandler.praxDecimals;
   }
 
   public async addUnusedOutputs(sender: State.IWallet, transaction: Interfaces.ITransaction, msg: string = 'Unused outputs updated'): Promise<void> {
@@ -298,8 +298,8 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
     const action = createStartActionJson(this.owner, template);
     action.transaction = this.contractKey;
     action.form = {
-      'symbol': BaseTransactionHandler.accountOutputsCoinSymbol,
-      'decimals': BaseTransactionHandler.accountOutputsCoinDecimals,
+      'symbol': BaseTransactionHandler.praxSymbol,
+      'decimals': BaseTransactionHandler.praxDecimals,
     }
     this.logger.info(`Instance for template ${accountOutputsTemplateName}, started`);
     return await contractStart({ action, initialState: {}, key: accountOutputsContractKey});

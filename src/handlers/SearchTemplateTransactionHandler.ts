@@ -25,7 +25,7 @@ export class SearchTemplateTransactionHandler extends BaseTransactionHandler {
       const result: ContractSearchResult = await contractSearch(payload);
       this.addSearchTemplatesToWallet(sender, result, transaction);
     } catch (e) {
-      const msg = `apply SearchTemplateTransaction failed: ${e.toString()}`;
+      const msg = `apply SearchTemplateTransaction failed: ${e.error}`;
       this.logger.warn(msg);
       this.showWalletErrors(sender, [msg], transaction)
     }

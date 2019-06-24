@@ -26,7 +26,7 @@ export class ContractActionTransactionHandler extends BaseTransactionHandler {
       const result: ContractResult = await contractAction(payload.action);
       await this.addInstanceToWallet(sender, result, transaction);
     } catch (e) {
-      const msg = `apply ContractActionTransaction failed: ${e.toString()}`
+      const msg = `apply ContractActionTransaction failed: ${e.error}`
       this.logger.warn(msg);
       this.showWalletErrors(sender, [msg], transaction)
     }

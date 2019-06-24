@@ -266,6 +266,7 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
 
   public async findOrStartPraxisInstance(address: string): Promise<ContractResult> {
     this.contractKey = hashContractKey(this.owner, accountOutputsContractKey);
+    BaseTransactionHandler.accountOutputsMint = this.contractKey
     this.logger.info(`contractKey: ${this.contractKey}`);
     this.logger.info(`Starting template instance, ${accountOutputsTemplateName}, key: ${this.contractKey}`);
     try {

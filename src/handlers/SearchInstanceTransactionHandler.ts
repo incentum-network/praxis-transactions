@@ -25,7 +25,7 @@ export class SearchInstanceTransactionHandler extends BaseTransactionHandler {
       const result: ContractResult[] = await instanceSearch(payload);
       this.addSearchInstancesToWallet(sender, result, transaction);
     } catch (e) {
-      const msg = `apply SearchInstanceTransaction failed: ${e.toString()}`;
+      const msg = `apply SearchInstanceTransaction failed: ${e.error}`;
       this.logger.warn(msg);
       this.showWalletErrors(sender, [msg], transaction)
     }

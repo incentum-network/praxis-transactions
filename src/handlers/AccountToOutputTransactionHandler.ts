@@ -43,7 +43,7 @@ export class AccountToOutputTransactionHandler extends BaseTransactionHandler {
         this.showWalletErrors(sender, ['Not enough tokens to create output'], transaction)
       }
     } catch (e) {
-      const msg = `apply AccountToOutputTransaction failed: ${e.toString()}`;
+      const msg = `apply AccountToOutputTransaction failed: ${e.error}`;
       this.logger.warn(msg);
       this.showWalletErrors(sender, [msg], transaction);
     }

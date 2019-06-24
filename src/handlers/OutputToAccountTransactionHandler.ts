@@ -54,8 +54,7 @@ export class OutputToAccountTransactionHandler extends BaseTransactionHandler {
       sender.balance = sender.balance.plus(amount);
       await this.addUnusedOutputs(sender, transaction, `${amount.toString()} output tokens added to account`);  
     } catch (e) {
-      console.log('outputToAccount failed', e.error)
-      const msg = `apply OutputToAccount failed: ${e}`;
+      const msg = `apply OutputToAccount failed: ${e.error}`;
       this.logger.warn(msg);
       this.showWalletErrors(sender, [msg], transaction);
     }

@@ -29,7 +29,7 @@ export class MatchSchemasTransactionHandler extends BaseTransactionHandler {
       const result: MatchSchemasResult = await matchSchemas(payload);
       this.addMatchSchemasToWallet(sender, result, transaction);
     } catch (e) {
-      const msg = `apply MatchSchemasTransaction failed: ${e.toString()}`;
+      const msg = `apply MatchSchemasTransaction failed: ${e.error}`;
       this.logger.warn(msg);
       this.showWalletErrors(sender, [msg], transaction)
     }

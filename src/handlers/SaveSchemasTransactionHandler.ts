@@ -35,7 +35,7 @@ export class SaveSchemasTransactionHandler extends BaseTransactionHandler {
         this.showWalletOk(sender, ['Schemas saved'], transaction, result);
       }
     } catch (e) {
-      const msg = `apply SaveSchemasTransaction failed: ${e.toString()}`;
+      const msg = `apply SaveSchemasTransaction failed: ${e.error}`;
       this.logger.warn(msg);
       this.showWalletErrors(sender, [msg], transaction)
     }

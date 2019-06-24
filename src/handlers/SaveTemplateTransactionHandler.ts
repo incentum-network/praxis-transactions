@@ -35,7 +35,7 @@ export class SaveTemplateTransactionHandler extends BaseTransactionHandler {
         this.showWalletOk(sender, ['Save Template Successful'], transaction, result);
       }
     } catch (e) {
-      const msg = `apply SaveTemplateTransaction failed: ${e.toString()}`;
+      const msg = `apply SaveTemplateTransaction failed: ${e.error}`;
       this.logger.warn(msg);
       this.showWalletErrors(sender, [msg], transaction)
     }

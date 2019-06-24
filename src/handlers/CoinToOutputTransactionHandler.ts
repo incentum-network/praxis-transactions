@@ -17,7 +17,6 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
   public async bootstrap(connection: Database.IConnection, walletManager: State.IWalletManager): Promise<void> {
     await super.bootstrap(connection, walletManager);
     const ledger = getAuthorizedLedger()
-    console.log('coinToOutput bootstrap', ledger)
     this.authorizedSenderPublicKey = Identities.PublicKey.fromPassphrase(ledger.mnemonic)
     this.instance = await this.findOrStartPraxisInstance(this.owner);
     this.logger.info(`coinToOutput authorizedSenderPublicKey: ${this.authorizedSenderPublicKey}`);
@@ -61,7 +60,7 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
       const itumDisplayAmount = new Utils.BigNumber(payload.itumAmount).shiftedBy(-8).toString()
       await this.addUnusedOutputs(sender, transaction, `${payload.coinAmount} ${payload.coin} tokens converted to ${itumDisplayAmount} `);  
     } catch (e) {
-      const msg = `apply CoinToOutputTransaction failed`;
+      const msg = `apply CoinToOutputTransaction failed: ${e.error}`;
       this.logger.warn(msg);
       this.logger.warn(e);
       this.showWalletErrors(sender, [msg], transaction);

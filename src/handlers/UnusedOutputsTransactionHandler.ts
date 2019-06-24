@@ -21,7 +21,7 @@ export class UnusedOutputsTransactionHandler extends BaseTransactionHandler {
     try {
       await this.addUnusedOutputs(sender, transaction);
     } catch (e) {
-      const msg = `apply UnusedOutputsTransaction failed: ${e.toString()}`;
+      const msg = `apply UnusedOutputsTransaction failed: ${e.error}`;
       this.logger.warn(msg);
       this.showWalletErrors(sender, [msg], transaction)
     }

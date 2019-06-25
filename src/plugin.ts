@@ -63,6 +63,8 @@ export const plugin: Container.IPluginDescriptor = {
       const itum: number = Number(`${options.itum}`)
       const ethDiscount: number = Number(`${options.ethDiscount}`)
       const arkDiscount: number = Number(`${options.arkDiscount}`)
+      const minPurchaseAmount = new Utils.BigNumber(`${options.minPurchaseAmount}`).shiftedBy(8)
+      const maxPurchaseAmount = new Utils.BigNumber(`${options.maxPurchaseAmount}`).shiftedBy(8)
       const network: number = Number(`${options.network}`)
       ledger = {
         ledger: Identities.Address.fromPassphrase(mnemonic, network),
@@ -89,7 +91,9 @@ export const plugin: Container.IPluginDescriptor = {
         itum,
         itumPrice: new Utils.BigNumber(itum),
         ethDiscount: new Utils.BigNumber(ethDiscount),
-        arkDiscount: new Utils.BigNumber(arkDiscount),  
+        arkDiscount: new Utils.BigNumber(arkDiscount),
+        minPurchaseAmount,
+        maxPurchaseAmount,
       }
       console.log('priceOpts listener', priceOpts)
       updatePricesOptions(priceOpts)

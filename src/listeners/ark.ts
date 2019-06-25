@@ -65,28 +65,33 @@ export const arkListener = async (options: IArkOptions): Promise<void> => {
 
     const processTransaction = async (transaction: IArkTransaction, options: IArkOptions) => {
       options.logger.debug(`processTransaction: ${transaction.id}`)
-  
-      const payload: CoinToOutputPayload = {
-        coin: 'ARK',
-        coinPrice: arkPrice.toString(),
-        itumPrice: priceOpts.itumPrice.toString(),
-        coinAmount: new Utils.BigNumber(`${transaction.amount}`).shiftedBy(-8).toString(),
-        itumAmount: arkToItum(`${transaction.amount}`).toString(),
-        to: transaction.recipient,
-        publicKey: transaction.senderPublicKey,
-        hash: transaction.id,
+      const coinAmount = new Utils.BigNumber(`${transaction.amount}`).shiftedBy(-8).toString()
+      const itumAmount = arkToItum(`${transaction.amount}`)
+      if (itumAmount.isGreaterThanOrEqualTo(priceOpts.minPurchaseAmount) && itumAmount.isLessThanOrEqualTo(priceOpts.maxPurchaseAmount)) {
+        const payload: CoinToOutputPayload = {
+          coin: 'ARK',
+          coinAmount,
+          itumAmount: itumAmount.toString(),
+          coinPrice: arkPrice.toString(),
+          itumPrice: priceOpts.itumPrice.toString(),
+          to: transaction.recipient,
+          publicKey: transaction.senderPublicKey,
+          hash: transaction.id,
+        }
+        await txCoinToOutput(payload, options.ledger)  
+      } else {
+        logger.warn(`Ark purchase out of bounds, ${itumAmount.shiftedBy(-8)}, must be >= ${priceOpts.minPurchaseAmount.shiftedBy(-8)} and <= ${priceOpts.maxPurchaseAmount.shiftedBy(-8)}`)
       }
-      await txCoinToOutput(payload, options.ledger)  
     }
   
     try {
       await updatePrices()
       const transactions = await getTransactionsForRecipient(options.endpoint, options.address, from)
-      transactions.forEach(async (t) => {
+      for (const t of transactions) {
         await processTransaction(t, options)
         // TODO need to set from right here, seconds since start of blockchain?
         from = t.timestamp.epoch
-      })
+      }
     } catch (e) {
       console.log('error in ark transactions', e)
       options.logger.error(`Error processing ark transactions, ${e}`)

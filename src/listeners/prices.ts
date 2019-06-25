@@ -7,13 +7,17 @@ export interface IPriceOptions {
   itumPrice: Utils.BigNumber
   ethDiscount: Utils.BigNumber
   arkDiscount: Utils.BigNumber
+  minPurchaseAmount: Utils.BigNumber
+  maxPurchaseAmount: Utils.BigNumber
 }
 
 export let priceOpts = {
-  itum: .008,
-  itumPrice: new Utils.BigNumber(.008),
+  itum: .015,
+  itumPrice: new Utils.BigNumber(.015),
   ethDiscount: new Utils.BigNumber(1.0),
-  arkDiscount: new Utils.BigNumber(1.5),  
+  arkDiscount: new Utils.BigNumber(1.5),
+  minPurchaseAmount: new Utils.BigNumber(5000).shiftedBy(8),
+  maxPurchaseAmount: new Utils.BigNumber(5000000).shiftedBy(8)
 }
 
 export let ethPrice = Utils.BigNumber.ZERO

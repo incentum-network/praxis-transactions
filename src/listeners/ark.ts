@@ -46,7 +46,6 @@ const getTransactionsForRecipient = async (endpoint: string, recipientId: string
       from,
     }
   }
-  console.log('getTransactionsForRecipient', post)
   try {
     const response = await axios.post(url, post)
     return response.data.data
@@ -98,6 +97,5 @@ export const arkListener = async (options: IArkOptions): Promise<void> => {
     }
     delayFunc(processTransactions, 60000 * 1)
   }
-  console.log(`arkListener delay: ${options.delay}`)
   delayFunc(processTransactions, options.delay)
 }

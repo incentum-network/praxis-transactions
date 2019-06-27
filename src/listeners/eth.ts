@@ -101,6 +101,5 @@ export const ethListener = async (options: IWeb3Options): Promise<void> => {
     delayFunc(processTransactions, 60000 * 1)
   }
 
-  console.log(`ethListener delay: ${delay}`)
   delayFunc(processTransactions, delay)
 }

@@ -1,7 +1,7 @@
 import { Container, Logger } from "@arkecosystem/core-interfaces";
 import { Handlers } from "@arkecosystem/core-transactions";
 import { Identities, Utils } from "@incentum/crypto";
-import { ILedger } from "@incentum/praxis-client";
+import { ILedger, setNetwork } from "@incentum/praxis-client";
 import { startConnection } from "@incentum/praxis-db";
 import { defaults } from "./defaults";
 import { ContractFromInstanceTransactionHandler } from "./handlers";
@@ -78,7 +78,6 @@ export const plugin: Container.IPluginDescriptor = {
         ethStartingBlock,
         endpoint: ethEndpoint,
       }
-      console.log('ethOpts listener', ethOpts)
       const arkOpts: IArkOptions = {
         ledger,
         logger,
@@ -86,7 +85,6 @@ export const plugin: Container.IPluginDescriptor = {
         address: arkAddress,
         endpoint: arkEndpoint,
       }
-      console.log('arkOpts listener', arkOpts)
       const priceOpts: IPriceOptions = {
         itum,
         itumPrice: new Utils.BigNumber(itum),
@@ -95,8 +93,8 @@ export const plugin: Container.IPluginDescriptor = {
         minPurchaseAmount,
         maxPurchaseAmount,
       }
-      console.log('priceOpts listener', priceOpts)
       updatePricesOptions(priceOpts)
+      setNetwork('local')
       await startListeners(ethOpts, arkOpts)
     }
 

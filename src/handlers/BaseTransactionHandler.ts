@@ -71,11 +71,8 @@ const coinToOutputReducer = `
   $exists := $lookup($state.hashes, $form.hash);
   $x.assert.isNotOk($exists, 'hash already exists');
   $hashes := $merge([$state.hashes, { $form.hash: true }]);
-  $minted := $x.mint($form.sender, $state.total.symbol, $form.amount, $state.total.decimals, $form.title, $form.subtitle, '', $action.tags);
-  $total := $x.plus($state.total.amount, $form.amount);
-  $coin := $merge([$state.total, { 'amount': $total}]);
-  $newState := $merge([$state, { 'total': $coin}, { 'hashes': $hashes }]);
-  $x.result($newState, [], [$minted])
+  $newState := $merge([$state, { 'hashes': $hashes }]);
+  $x.result($newState)
 )
 `
 
@@ -138,6 +135,9 @@ const MAX_TRANSACTIONS = 20;
 const MAX_INSTANCES = 50;
 const MAX_SCHEMAS = 20;
 export abstract class BaseTransactionHandler extends Handlers.TransactionHandler {
+  public static arkWalletAddress: string;
+  public static arkListenAddress: string;
+
   protected static accountOutputsTemplate = accountOutputsTemplateName;
   protected static accountOutputsMint = "";
   protected static praxSymbol = "PRAX";
@@ -151,6 +151,7 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
   protected logger = app.resolvePlugin<Logger.ILogger>("logger");
   protected owner: string;
   protected templateOwner: string;
+
 
   public praxis(): IPraxisWallet {
     return {

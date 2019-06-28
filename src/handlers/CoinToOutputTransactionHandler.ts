@@ -1,15 +1,14 @@
 import { Database, EventEmitter, State } from "@arkecosystem/core-interfaces";
 import { Identities, Interfaces, Transactions, Utils } from "@arkecosystem/crypto";
-import { contractAction, rollbackLastAction } from "@incentum/praxis-db";
-import { CoinToOutputPayload, createActionActionJson, hashJson, toContractJson } from "@incentum/praxis-interfaces";
+import { CoinToOutputPayload } from "@incentum/praxis-interfaces";
 import { getAuthorizedLedger } from '../plugin'
 import { CoinToOutputTransaction } from "../transactions";
 import { BaseTransactionHandler } from './BaseTransactionHandler';
 
-
 export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
 
   private authorizedSenderPublicKey: string;
+  private hashes: Map<string, number> = new Map<string, number>()
   public getConstructor(): Transactions.TransactionConstructor {
     return CoinToOutputTransaction
   }
@@ -22,6 +21,26 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
     this.logger.info(`coinToOutput authorizedSenderPublicKey: ${this.authorizedSenderPublicKey}`);
     this.logger.info(`coinToOutput contractKey: ${this.contractKey}`);
     this.logger.info(`coinToOutput mint: ${BaseTransactionHandler.accountOutputsMint}`);
+
+    const transactions = await connection.transactionsRepository.getAssetsByType(this.getConstructor().type);
+    for (const transaction of transactions) {
+      // TODO should check that transaction succeeded in praxis
+      const payload: CoinToOutputPayload = transaction.asset.payload;
+      if (this.hashes.has(payload.hash)) {
+        const count = this.hashes.get(payload.hash)
+        this.hashes.set(payload.hash, count + 1)
+        continue 
+      }
+      this.hashes.set(payload.hash, 1)
+      const praxAmount = new Utils.BigNumber(payload.itumAmount)
+      const purchaser: State.IWallet = walletManager.findByPublicKey(payload.publicKey)
+      const praxWallet: State.IWallet = walletManager.findByAddress(BaseTransactionHandler.arkWalletAddress)
+      this.logger.debug(`coinToOutput bootstrap before ${purchaser.address} balance: ${purchaser.balance}, ${praxWallet.address} balance: ${praxWallet.balance}`)
+      purchaser.balance = purchaser.balance.plus(praxAmount)
+      praxWallet.balance = praxWallet.balance.minus(praxAmount)
+      this.logger.debug(`coinToOutput bootstrap after ${purchaser.address} balance: ${purchaser.balance}, ${praxWallet.address} balance: ${praxWallet.balance}`)
+    }
+
   }
 
   public canBeApplied(
@@ -29,12 +48,12 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
     wallet: State.IWallet,
     databaseWalletManager: State.IWalletManager,
   ): boolean {
-    this.logger.debug(`coinToOutput canBeApplied: ${this.authorizedSenderPublicKey} === ${transaction.data.senderPublicKey}`);
+    // this.logger.debug(`coinToOutput canBeApplied: ${this.authorizedSenderPublicKey} === ${transaction.data.senderPublicKey}`);
     return transaction.data.senderPublicKey === this.authorizedSenderPublicKey;
   }
 
   public verify(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): boolean {
-    this.logger.debug(`coinToOutput verify: ${this.authorizedSenderPublicKey} === ${transaction.data.senderPublicKey}`);
+    // this.logger.debug(`coinToOutput verify: ${this.authorizedSenderPublicKey} === ${transaction.data.senderPublicKey}`);
     return transaction.data.senderPublicKey === this.authorizedSenderPublicKey && super.verify(transaction, walletManager);
   }
 
@@ -46,19 +65,22 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
     const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
     try {
       const payload: CoinToOutputPayload = transaction.data.asset.payload;
-      const action = createActionActionJson(this.owner, this.instance.contract, BaseTransactionHandler.coinToOutputReducer)
-      action.transaction = transaction.id;
-      const hash = payload.hash.slice(0, 16); // enough for collisions
-      action.form = {
-        hash,
-        amount: payload.itumAmount,
-        sender: Identities.Address.fromPublicKey(payload.publicKey),
-        title: `PRAX tokens from ${payload.coin}`,
-        subtitle: `PRAX tokens purchased from ${payload.coinAmount} ${payload.coin}`,
+      const praxAmount = new Utils.BigNumber(payload.itumAmount)
+      const purchaser: State.IWallet = walletManager.findByPublicKey(payload.publicKey)
+      const praxWallet: State.IWallet = walletManager.findByAddress(BaseTransactionHandler.arkWalletAddress)
+      if (this.hashes.has(payload.hash)) {
+        // This can happen if listener resends from the beginning, so just ignore
+        // but still need to count it for revert
+        const count = this.hashes.get(payload.hash)
+        this.hashes.set(payload.hash, count + 1)
+        this.logger.debug(`coinToOutput replayed ${payload.hash} purchaser: ${purchaser.address} ${purchaser.balance}`)
+      } else {
+        this.hashes.set(payload.hash, 1)
+        this.logger.debug(`coinToOutput before ${purchaser.address} balance: ${purchaser.balance}, ${praxWallet.address} balance: ${praxWallet.balance}`)
+        purchaser.balance = purchaser.balance.plus(praxAmount)
+        praxWallet.balance = praxWallet.balance.minus(praxAmount)
+        this.logger.debug(`coinToOutput after ${purchaser.address} balance: ${purchaser.balance}, ${praxWallet.address} balance: ${praxWallet.balance}`)
       }
-      await contractAction(action);
-      const itumDisplayAmount = new Utils.BigNumber(payload.itumAmount).shiftedBy(-8).toString()
-      await this.addUnusedOutputs(sender, transaction, `${payload.coinAmount} ${payload.coin} tokens converted to ${itumDisplayAmount} `);  
     } catch (e) {
       const msg = `apply CoinToOutputTransaction failed: ${e.error}`;
       this.logger.warn(msg);
@@ -68,9 +90,23 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
   }
 
   public async revert(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): Promise<void> {
-    const contractHash = hashJson(toContractJson(this.instance.contract))
-    await rollbackLastAction(contractHash)
     this.logger.info(`revert CoinToOutputTransaction`);
+    const payload: CoinToOutputPayload = transaction.data.asset.payload;
+    if (this.hashes.has(payload.hash)) {
+      const count = this.hashes.get(payload.hash)
+      if (count === 1) {
+        this.hashes.delete(payload.hash)
+        const praxAmount = new Utils.BigNumber(payload.itumAmount)
+        const purchaser: State.IWallet = walletManager.findByPublicKey(payload.publicKey)
+        const praxWallet: State.IWallet = walletManager.findByAddress(BaseTransactionHandler.arkWalletAddress)
+        this.logger.debug(`coinToOutput revert before ${purchaser.address} balance: ${purchaser.balance}, ${praxWallet.address} balance: ${praxWallet.balance}`)
+        purchaser.balance = purchaser.balance.minus(praxAmount)
+        praxWallet.balance = praxWallet.balance.plus(praxAmount)
+        this.logger.debug(`coinToOutput revert after ${purchaser.address} balance: ${purchaser.balance}, ${praxWallet.address} balance: ${praxWallet.balance}`)
+      } else {
+        this.hashes.set(payload.hash, count - 1)
+      }
+    }
   }
 
 }

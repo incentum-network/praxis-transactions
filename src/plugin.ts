@@ -17,6 +17,7 @@ import { OutputToAccountTransactionHandler } from "./handlers";
 import { SaveTemplateTransactionHandler } from "./handlers";
 import { SearchInstanceTransactionHandler } from "./handlers";
 import { CoinToOutputTransactionHandler } from "./handlers";
+import { BaseTransactionHandler } from "./handlers/BaseTransactionHandler";
 import { arkListener, ethListener, IArkOptions, IPriceOptions, IWeb3Options, updatePricesOptions } from './listeners';
 
 const opts = {
@@ -54,7 +55,10 @@ export const plugin: Container.IPluginDescriptor = {
     logger.debug(`registering praxis plugin`)
     
     if (options.authorizedCoinSenderPassphrase) {
+      const arkWallet: string = `${options.arkWallet}`
+      BaseTransactionHandler.arkWalletAddress = arkWallet;
       const arkAddress: string = `${options.arkAddress}`
+      BaseTransactionHandler.arkListenAddress = arkAddress;
       const ethAddress: string = `${options.ethAddress}`
       const mnemonic: string = `${options.authorizedCoinSenderPassphrase}`
       const ethStartingBlock: number = Number(`${options.ethStartingBlock}`)
@@ -65,9 +69,9 @@ export const plugin: Container.IPluginDescriptor = {
       const arkDiscount: number = Number(`${options.arkDiscount}`)
       const minPurchaseAmount = new Utils.BigNumber(`${options.minPurchaseAmount}`).shiftedBy(8)
       const maxPurchaseAmount = new Utils.BigNumber(`${options.maxPurchaseAmount}`).shiftedBy(8)
-      const network: number = Number(`${options.network}`)
+      const networkVersion: number = Number(`${options.network}`)
       ledger = {
-        ledger: Identities.Address.fromPassphrase(mnemonic, network),
+        ledger: Identities.Address.fromPassphrase(mnemonic, networkVersion),
         mnemonic,
       }
       const ethOpts: IWeb3Options = {
@@ -81,6 +85,7 @@ export const plugin: Container.IPluginDescriptor = {
       const arkOpts: IArkOptions = {
         ledger,
         logger,
+        networkVersion,
         delay: 15 * 1000,
         address: arkAddress,
         endpoint: arkEndpoint,

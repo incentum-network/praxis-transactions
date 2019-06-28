@@ -1,5 +1,5 @@
 import { Logger } from "@arkecosystem/core-interfaces";
-import { Utils } from "@arkecosystem/crypto";
+import { Identities, Utils } from "@arkecosystem/crypto";
 import { ILedger, txCoinToOutput } from "@incentum/praxis-client";
 import { CoinToOutputPayload } from "@incentum/praxis-interfaces";
 import axios from 'axios';
@@ -11,6 +11,7 @@ export interface IArkOptions {
   address: string
   delay: number
   endpoint: string
+  networkVersion: number
 }
 
 const searchUrl = (endpoint) => `${endpoint}/api/v2/transactions/search`
@@ -53,7 +54,9 @@ const getTransactionsForRecipient = async (endpoint: string, recipientId: string
     console.log('ark failed', e)
     return []
   }
-} 
+}
+
+export const delay = time => new Promise(resolve => setTimeout(resolve, time))
 
 export const arkListener = async (options: IArkOptions): Promise<void> => {
   const logger = options.logger
@@ -66,10 +69,12 @@ export const arkListener = async (options: IArkOptions): Promise<void> => {
       options.logger.debug(`processTransaction: ${transaction.id}`)
       const coinAmount = new Utils.BigNumber(`${transaction.amount}`).shiftedBy(-8).toString()
       const itumAmount = arkToItum(`${transaction.amount}`)
+      const recipientId = Identities.Address.fromPublicKey(transaction.senderPublicKey, options.networkVersion)
       if (itumAmount.isGreaterThanOrEqualTo(priceOpts.minPurchaseAmount) && itumAmount.isLessThanOrEqualTo(priceOpts.maxPurchaseAmount)) {
-        const payload: CoinToOutputPayload = {
+          const payload: CoinToOutputPayload = {
           coin: 'ARK',
           coinAmount,
+          recipientId,
           itumAmount: itumAmount.toString(),
           coinPrice: arkPrice.toString(),
           itumPrice: priceOpts.itumPrice.toString(),
@@ -77,7 +82,9 @@ export const arkListener = async (options: IArkOptions): Promise<void> => {
           publicKey: transaction.senderPublicKey,
           hash: transaction.id,
         }
-        await txCoinToOutput(payload, options.ledger)  
+        // Don't care about response, but sleep 1 second
+        txCoinToOutput(payload, options.ledger)
+        await delay(1000)
       } else {
         logger.warn(`Ark purchase out of bounds, ${itumAmount.shiftedBy(-8)}, must be >= ${priceOpts.minPurchaseAmount.shiftedBy(-8)} and <= ${priceOpts.maxPurchaseAmount.shiftedBy(-8)}`)
       }

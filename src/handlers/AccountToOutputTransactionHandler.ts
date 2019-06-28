@@ -17,6 +17,19 @@ export class AccountToOutputTransactionHandler extends BaseTransactionHandler {
     BaseTransactionHandler.accountOutputsMint = hashJson(this.instance.contract);
     this.logger.info(`accountToOutput contractKey: ${this.contractKey}`);
     this.logger.info(`accountToOutput mint: ${BaseTransactionHandler.accountOutputsMint}`);
+
+    const transactions = await connection.transactionsRepository.getAssetsByType(this.getConstructor().type);
+    for (const transaction of transactions) {
+      // TODO should check that transaction succeeded in praxis
+      const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
+      const payload: AccountToOutputPayload = transaction.asset.payload;
+      this.logger.debug(`accountToOutput bootstrap before: ${sender.balance} ${payload.amount}`);
+      if (sender.balance.isGreaterThanOrEqualTo(new Utils.BigNumber(payload.amount))) {
+        sender.balance = sender.balance.minus(new Utils.BigNumber(payload.amount));
+      }
+      this.logger.debug(`accountToOutput bootstrap after: ${sender.balance} ${payload.amount}`);
+    }
+
   }
 
   public emitEvents(transaction: Interfaces.ITransaction, emitter: EventEmitter.EventEmitter): void {

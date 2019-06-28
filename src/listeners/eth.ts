@@ -29,6 +29,7 @@ const processTransaction = async (t:Transaction, options: IWeb3Options): Promise
   const publicKey = compressed.toString('hex')
   const payload: CoinToOutputPayload = {
     coin: 'ETH',
+    recipientId: '',
     coinPrice: ethPrice.toString(),
     itumPrice: priceOpts.itumPrice.toString(),
     coinAmount: Web3Utils.fromWei(`${t.value}`),

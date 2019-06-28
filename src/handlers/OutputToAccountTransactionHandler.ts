@@ -31,8 +31,20 @@ export class OutputToAccountTransactionHandler extends BaseTransactionHandler {
   public async bootstrap(connection: Database.IConnection, walletManager: State.IWalletManager): Promise<void> {
     await super.bootstrap(connection, walletManager);
     this.instance = await this.findOrStartPraxisInstance(this.owner);
-    this.logger.info(`accountToOutput contractKey: ${this.contractKey}`);
-    this.logger.info(`accountToOutput mint: ${BaseTransactionHandler.accountOutputsMint}`);
+    this.logger.info(`outputToAccount contractKey: ${this.contractKey}`);
+    this.logger.info(`outputToAccount mint: ${BaseTransactionHandler.accountOutputsMint}`);
+
+    const transactions = await connection.transactionsRepository.getAssetsByType(this.getConstructor().type);
+    for (const transaction of transactions) {
+      // TODO should check that transaction succeeded in praxis
+      const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
+      const payload: OutputToAccountPayload = transaction.asset.payload;
+      const amount = this.getCoinAmount(payload.input.output);
+      this.logger.debug(`outputToAccount bootstrap before: ${sender.balance} ${amount}`);
+      sender.balance = sender.balance.plus(amount);
+      this.logger.debug(`outputToAccount bootstrap after: ${sender.balance} ${amount}`);
+    }
+
   }
 
   public emitEvents(transaction: Interfaces.ITransaction, emitter: EventEmitter.EventEmitter): void {
@@ -40,7 +52,6 @@ export class OutputToAccountTransactionHandler extends BaseTransactionHandler {
   }
 
   public async apply(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): Promise<void> {
-    // TODO if wallet isn't created, it looks like it will create one, so should be ok. Needs to fail otherwise.
     const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
     try {
       const payload: OutputToAccountPayload = transaction.data.asset.payload;
@@ -65,12 +76,12 @@ export class OutputToAccountTransactionHandler extends BaseTransactionHandler {
   }
 
   public async revert(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): Promise<void> {
+    this.logger.info(`revert OutputToAccountTransaction`);
     const payload: OutputToAccountPayload = transaction.data.asset.payload;
     const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
     const contractHash = hashJson(toContractJson(this.instance.contract))
     await rollbackLastAction(contractHash)
     const amount = this.getCoinAmount(payload.input.output);
     sender.balance = sender.balance.minus(new Utils.BigNumber(amount));
-    this.logger.info(`revert OutputToAccountTransaction`);
   }
 }

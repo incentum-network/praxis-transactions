@@ -21,7 +21,7 @@ export class AccountToOutputTransactionHandler extends BaseTransactionHandler {
     const transactions = await connection.transactionsRepository.getAssetsByType(this.getConstructor().type);
     for (const transaction of transactions) {
       // TODO should check that transaction succeeded in praxis
-      const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
+      const sender: State.IWallet = walletManager.findByPublicKey(transaction.senderPublicKey);
       const payload: AccountToOutputPayload = transaction.asset.payload;
       this.logger.debug(`accountToOutput bootstrap before: ${sender.balance} ${payload.amount}`);
       if (sender.balance.isGreaterThanOrEqualTo(new Utils.BigNumber(payload.amount))) {

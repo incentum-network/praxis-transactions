@@ -69,12 +69,12 @@ export const arkListener = async (options: IArkOptions): Promise<void> => {
       options.logger.debug(`processTransaction: ${transaction.id}`)
       const coinAmount = new Utils.BigNumber(`${transaction.amount}`).shiftedBy(-8).toString()
       const itumAmount = arkToItum(`${transaction.amount}`)
-      const recipientId = Identities.Address.fromPublicKey(transaction.senderPublicKey, options.networkVersion)
+      // const recipientId = Identities.Address.fromPublicKey(transaction.senderPublicKey, options.networkVersion)
       if (itumAmount.isGreaterThanOrEqualTo(priceOpts.minPurchaseAmount) && itumAmount.isLessThanOrEqualTo(priceOpts.maxPurchaseAmount)) {
           const payload: CoinToOutputPayload = {
           coin: 'ARK',
           coinAmount,
-          recipientId,
+          // recipientId,
           itumAmount: itumAmount.toString(),
           coinPrice: arkPrice.toString(),
           itumPrice: priceOpts.itumPrice.toString(),
@@ -82,6 +82,7 @@ export const arkListener = async (options: IArkOptions): Promise<void> => {
           publicKey: transaction.senderPublicKey,
           hash: transaction.id,
         }
+        console.log('sending txCoinToOutput', payload)
         // Don't care about response, but sleep 1 second
         txCoinToOutput(payload, options.ledger)
         await delay(1000)

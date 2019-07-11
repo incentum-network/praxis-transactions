@@ -55,8 +55,6 @@ export const plugin: Container.IPluginDescriptor = {
     logger.debug(`registering praxis plugin`)
     
     if (options.authorizedCoinSenderPassphrase) {
-      const arkWallet: string = `${options.arkWallet}`
-      BaseTransactionHandler.arkWalletAddress = arkWallet;
       const arkAddress: string = `${options.arkAddress}`
       BaseTransactionHandler.arkListenAddress = arkAddress;
       const ethAddress: string = `${options.ethAddress}`
@@ -70,8 +68,11 @@ export const plugin: Container.IPluginDescriptor = {
       const minPurchaseAmount = new Utils.BigNumber(`${options.minPurchaseAmount}`).shiftedBy(8)
       const maxPurchaseAmount = new Utils.BigNumber(`${options.maxPurchaseAmount}`).shiftedBy(8)
       const networkVersion: number = Number(`${options.network}`)
+
+      const address = Identities.Address.fromPassphrase(mnemonic, networkVersion)
+      BaseTransactionHandler.arkWalletAddress = address;
       ledger = {
-        ledger: Identities.Address.fromPassphrase(mnemonic, networkVersion),
+        ledger: address,
         mnemonic,
       }
       const ethOpts: IWeb3Options = {

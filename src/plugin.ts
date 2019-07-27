@@ -55,6 +55,8 @@ export const plugin: Container.IPluginDescriptor = {
     logger.debug(`registering praxis plugin`)
     
     if (options.authorizedCoinSenderPassphrase) {
+      const arkGenesis: string = `${options.arkGenesis}`
+      BaseTransactionHandler.arkWalletAddress = arkGenesis;
       const arkAddress: string = `${options.arkAddress}`
       BaseTransactionHandler.arkListenAddress = arkAddress;
       const ethAddress: string = `${options.ethAddress}`
@@ -70,7 +72,6 @@ export const plugin: Container.IPluginDescriptor = {
       const networkVersion: number = Number(`${options.network}`)
 
       const address = Identities.Address.fromPassphrase(mnemonic, networkVersion)
-      BaseTransactionHandler.arkWalletAddress = address;
       ledger = {
         ledger: address,
         mnemonic,

@@ -33,7 +33,7 @@
     "@arkecosystem/core-transactions": "^2.4.0",
     "@incentum/crypto": "^2.4.3",
     "@incentum/praxis-client": "^0.0.30",
-    "@incentum/praxis-db": "^1.0.393",
+    "@incentum/praxis-db": "^1.0.396",
     "@incentum/praxis-contracts": "^1.0.357",
     "@incentum/praxis-interfaces": "^1.0.351",
     "bytebuffer": "^5.0.1",

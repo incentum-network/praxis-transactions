@@ -1,8 +1,10 @@
 # Praxis Transactions
 
+Custom transactions to support Praxis Smart Contracts and Praxis components.
+
 ## Security
 
-If you discover a security vulnerability within this package, please send an e-mail to security@ark.io. All security vulnerabilities will be promptly addressed.
+If you discover a security vulnerability within this package, please send an e-mail to security@incentum.network. All security vulnerabilities will be promptly addressed.
 
 ## Credits
 

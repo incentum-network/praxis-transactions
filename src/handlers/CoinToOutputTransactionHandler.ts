@@ -1,7 +1,7 @@
 import { Database, EventEmitter, State } from "@arkecosystem/core-interfaces";
-import { Identities, Interfaces, Transactions, Utils } from "@arkecosystem/crypto";
+import { Interfaces, Transactions, Utils } from "@arkecosystem/crypto";
 import { CoinToOutputPayload } from "@incentum/praxis-interfaces";
-import { getAuthorizedLedger } from '../plugin'
+import { authorizedSenderPublicKey } from '../plugin'
 import { CoinToOutputTransaction } from "../transactions";
 import { BaseTransactionHandler } from './BaseTransactionHandler';
 
@@ -15,8 +15,7 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
 
   public async bootstrap(connection: Database.IConnection, walletManager: State.IWalletManager): Promise<void> {
     await super.bootstrap(connection, walletManager);
-    const ledger = getAuthorizedLedger()
-    this.authorizedSenderPublicKey = Identities.PublicKey.fromPassphrase(ledger.mnemonic)
+    this.authorizedSenderPublicKey = authorizedSenderPublicKey
     this.instance = await this.findOrStartPraxisInstance(this.owner);
     this.logger.info(`coinToOutput authorizedSenderPublicKey: ${this.authorizedSenderPublicKey}`);
     this.logger.info(`coinToOutput contractKey: ${this.contractKey}`);
@@ -48,12 +47,10 @@ export class CoinToOutputTransactionHandler extends BaseTransactionHandler {
     wallet: State.IWallet,
     databaseWalletManager: State.IWalletManager,
   ): boolean {
-    // this.logger.debug(`coinToOutput canBeApplied: ${this.authorizedSenderPublicKey} === ${transaction.data.senderPublicKey}`);
     return transaction.data.senderPublicKey === this.authorizedSenderPublicKey;
   }
 
   public verify(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): boolean {
-    // this.logger.debug(`coinToOutput verify: ${this.authorizedSenderPublicKey} === ${transaction.data.senderPublicKey}`);
     return transaction.data.senderPublicKey === this.authorizedSenderPublicKey && super.verify(transaction, walletManager);
   }
 

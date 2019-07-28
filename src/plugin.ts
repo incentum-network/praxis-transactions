@@ -44,6 +44,7 @@ let ledger: ILedger;
 export const getAuthorizedLedger = (): ILedger => {
   return ledger
 }
+export let authorizedSenderPublicKey: string
 
 export const plugin: Container.IPluginDescriptor = {
   pkg: require("../package.json"),
@@ -53,12 +54,13 @@ export const plugin: Container.IPluginDescriptor = {
   async register(container: Container.IContainer, options) {
     const logger: Logger.ILogger = container.resolvePlugin<Logger.ILogger>("logger")
     logger.debug(`registering praxis plugin`)
-    
+    authorizedSenderPublicKey = `${options.authorizedCoinSenderPublicKey}`
+    const arkGenesis: string = `${options.arkGenesis}`
+    BaseTransactionHandler.arkWalletAddress = arkGenesis;
+    const arkAddress: string = `${options.arkAddress}`
+    BaseTransactionHandler.arkListenAddress = arkAddress;
+  
     if (options.authorizedCoinSenderPassphrase) {
-      const arkGenesis: string = `${options.arkGenesis}`
-      BaseTransactionHandler.arkWalletAddress = arkGenesis;
-      const arkAddress: string = `${options.arkAddress}`
-      BaseTransactionHandler.arkListenAddress = arkAddress;
       const ethAddress: string = `${options.ethAddress}`
       const mnemonic: string = `${options.authorizedCoinSenderPassphrase}`
       const ethStartingBlock: number = Number(`${options.ethStartingBlock}`)

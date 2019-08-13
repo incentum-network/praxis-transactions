@@ -304,7 +304,7 @@ export abstract class BaseTransactionHandler extends Handlers.TransactionHandler
       'decimals': BaseTransactionHandler.praxDecimals,
     }
     this.logger.info(`Instance for template ${accountOutputsTemplateName}, started`);
-    return await contractStart({ action, initialState: {}, key: accountOutputsContractKey});
+    return await contractStart({ action, initialState: {}, key: accountOutputsContractKey}, Date.now());
 }
 
   public canBeApplied(

@@ -49,7 +49,7 @@ export class AccountToOutputTransactionHandler extends BaseTransactionHandler {
           title: 'PRAX tokens from wallet',
           subtitle: 'PRAX tokens moved from the Praxis wallet',
         }
-        await contractAction(action);
+        await contractAction(action, transaction.timestamp);
         sender.balance = sender.balance.minus(new Utils.BigNumber(payload.amount));
         await this.addUnusedOutputs(sender, transaction, `${payload.amount} account tokens converted to output`);
       } else {

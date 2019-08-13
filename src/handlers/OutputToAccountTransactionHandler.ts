@@ -59,7 +59,7 @@ export class OutputToAccountTransactionHandler extends BaseTransactionHandler {
       action.transaction = transaction.id;
       action.inputs = [payload.input];
       action.signatures = [payload.signature]
-      await contractAction(action);
+      await contractAction(action, transaction.timestamp);
       const amount = this.getCoinAmount(payload.input.output);
       this.logger.debug(`${amount.toString()} added to balance for ${sender.address}`);
       sender.balance = sender.balance.plus(amount);

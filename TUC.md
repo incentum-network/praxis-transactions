@@ -1,11 +1,5 @@
-### Token Use Clause for Praxis Smart Contracts, Praxis, and Incentum Components
+### Token Use Clause
 
-1. You must acquire an equivalent amount of PRAX (to the gas fees) from an Incentum supplied source.
-2. You cannot modify any of the calculations that determine the gas fees, or that allow access to the gas fee usage.
-
-#### Notes for acquiring PRAX
-
-This gives you the flexibility of not having to use PRAX directly anywhere in your network, as long as you acquire the equivalent amount (to the gas fees) from an Incentum supplied source. It needs to be an Incentum supplied source to prevent wash trading, but the source will calculate the 
-price based on public exchange data (when available), or the price will be the current price as set by Incentum.
-
-The exact mechanism for acquiring PRAX is not described here.
+1. If you distribute or use a licensed Work, the Work must be using the official PRAX token.
+2. You cannot modify any of the calculations that determine the gas or other fees, unless specifically stated otherwise.
+3. Licensed Works that do not include use of the PRAX token cannot be distributed or used alone. They must be distributed or used as a part of a licensed Work that includes usage of the PRAX token.

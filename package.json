@@ -2,11 +2,11 @@
   "private": true,
   "name": "@incentum/praxis-transactions",
   "description": "Praxis Transaction for Ark",
-  "version": "0.0.1",
+  "license": "TUL",
+  "version": "1.0.2",
   "contributors": [
     "Your Name <your@domain.io>"
   ],
-  "license": "MIT",
   "main": "dist/index.js",
   "files": [
     "dist"
@@ -32,10 +32,10 @@
     "@arkecosystem/core-interfaces": "^2.4.0",
     "@arkecosystem/core-transactions": "^2.4.0",
     "@incentum/crypto": "^2.4.4",
-    "@incentum/praxis-client": "^0.0.35",
-    "@incentum/praxis-db": "^1.0.409",
-    "@incentum/praxis-contracts": "^1.0.362",
-    "@incentum/praxis-interfaces": "^1.0.353",
+    "@incentum/praxis-client": "^0.0.36",
+    "@incentum/praxis-db": "^1.0.410",
+    "@incentum/praxis-contracts": "^1.0.363",
+    "@incentum/praxis-interfaces": "^1.0.354",
     "bytebuffer": "^5.0.1",
     "ccxt": "^1.18.698",
     "ethereumjs-tx": "1.3.7",

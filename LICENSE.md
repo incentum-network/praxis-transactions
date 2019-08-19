@@ -45,7 +45,7 @@ The *Token Use Clause* describes the definition and requirements for using the u
 
 Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare Derivative Works of, publicly display, publicly perform, and distribute the Work in Source or Object form provided:
 
-* You abide by the ***Token Use Clause*** attached to this License. 
+* You abide by the ***Token Use Clause*** included with this license (in file TUC.md). 
 
 * You must give any other recipients of the Work or Derivative Works a copy of this License and the Token Use Clause.
 

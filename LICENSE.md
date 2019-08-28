@@ -1,3 +1,5 @@
+Copyright &copy; 2018-2019 Incentum Ltd.
+
 ## Token Use License Version 1.0
 
 ### Preamble
@@ -45,9 +47,9 @@ The *Token Use Clause* describes the definition and requirements for using the u
 
 Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare Derivative Works of, publicly display, publicly perform, and distribute the Work in Source or Object form provided:
 
-* You abide by the ***Token Use Clause*** included with this license (in file TUC.md). 
+* You abide by the ***Token Use Clause*** included with this License (in file TUC.md). 
 
-* You must give any other recipients of the Work or Derivative Works a copy of this License and the Token Use Clause.
+* The Work and any Derivative Work must be distributed under the terms of this License, including the Token Use Clause. You must give any other recipients of the Work or Derivative Works a copy of this License and the Token Use Clause.
 
 * You must cause any modified files to carry prominent notices stating that You changed the files; and
 
@@ -59,7 +61,7 @@ Subject to the terms and conditions of this License, each Contributor hereby gra
 
 Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable (except as stated in this section) patent license to make, have made,use, offer to sell, sell, import, and otherwise transfer the Work, where such license applies only to those patent claims licensable by such Contributor that are necessarily infringed by their Contribution(s) alone or by combination of their Contribution(s) with the Work to which such Contribution(s) was submitted, provided:
 
-* You abide by the ***Token Use Clause*** attached to this License. 
+* You abide by the ***Token Use Clause*** included with this License (in file TUC.md).
 
 #### 3. Submission of Contributions
 

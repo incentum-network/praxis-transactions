@@ -1,5 +1,8 @@
 ### Token Use Clause
 
-1. If you distribute or use a licensed Work, the Work must be using the official PRAX token.
-2. You cannot modify any of the calculations that determine the gas or other fees, unless specifically stated otherwise.
-3. Licensed Works that do not include use of the PRAX token cannot be distributed or used alone. They must be distributed or used as a part of a licensed Work that includes usage of the PRAX token.
+1. Under no circumstance can you reproduce, create, distribute, or use a Work licensed under this License, or any Derivative Work, until the mainnet is started by the Licensor (Incentum Ltd.) and designated for this purpose. This clause 1 does not apply where reproduction is to Your own machines solely for the purpose of testing the Work.
+2. If you reproduce, create, distribute or use a Work licensed under this License, or any Derivative Work, the Work and/or Derivative Work must use, and be required to use, the mainnet and official PRAX token (both as defined below). This clause 2 does not apply where the reproduction is to Your own machines solely for the purposes of testing the Work.
+3. In using the Work, or creating any Derivative Work, you may not modify any of the calculations that determine the gas or other fees set out in the Work, or substitute another token for the official PRAX token, unless specifically stated otherwise.
+4. Works and Derivative Works that do not use, or are not required to use, the mainnet and official PRAX token cannot be distributed or used alone, except solely for testing purposes on Your own machines. They must be distributed or used as a part of a Work or Derivative Work that uses, or is required to use, the mainnet and official PRAX token.
+5. You agree to do all things necessary to ensure that all Works and Derivative Works use the mainnet and official PRAX token.
+6. The official PRAX token is the PRAX token running on the on the mainnet started by the Licensor (Incentum Ltd.) and designated for this purpose. Any Work or Derivative Work that sends transactions or other operations where use of PRAX is required must send the transactions to the mainnet started by the Licensor (Incentum Ltd.) and designated for this purpose, or the Work or Derivative Work must be running as a part of that mainnet.

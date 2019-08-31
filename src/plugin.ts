@@ -24,22 +24,25 @@ import { Handlers } from "@arkecosystem/core-transactions";
 import { Identities, Utils } from "@incentum/crypto";
 import { ILedger, setNetwork } from "@incentum/praxis-client";
 import { startConnection } from "@incentum/praxis-db";
+import { setRootDir } from "@incentum/praxis-spaces";
 import { defaults } from "./defaults";
-import { ContractFromInstanceTransactionHandler } from "./handlers";
-import { ContractStartTransactionHandler } from "./handlers";
+import { AccountToOutputTransactionHandler } from "./handlers";
 import { MatchSchemasTransactionHandler } from "./handlers";
 import { SaveSchemasTransactionHandler } from "./handlers";
 import { ContractActionTransactionHandler } from "./handlers";
-import { ContractFromActionTransactionHandler } from "./handlers";
+import { ContractFromInstanceTransactionHandler } from "./handlers";
 import { SearchTemplateTransactionHandler } from "./handlers";
 import { UnusedOutputsTransactionHandler } from "./handlers";
-import { AccountToOutputTransactionHandler } from "./handlers";
+import { ContractStartTransactionHandler } from "./handlers";
 import { OutputToAccountTransactionHandler } from "./handlers";
 import { SaveTemplateTransactionHandler } from "./handlers";
 import { SearchInstanceTransactionHandler } from "./handlers";
 import { CoinToOutputTransactionHandler } from "./handlers";
+import { ContractFromActionTransactionHandler } from "./handlers";
 import { BaseTransactionHandler } from "./handlers/BaseTransactionHandler";
 import { arkListener, ethListener, IArkOptions, IPriceOptions, IWeb3Options, updatePricesOptions } from './listeners';
+
+import path from 'path'
 
 const opts = {
   type: 'mysql',
@@ -80,6 +83,9 @@ export const plugin: Container.IPluginDescriptor = {
     BaseTransactionHandler.arkWalletAddress = arkGenesis;
     const arkAddress: string = `${options.arkAddress}`
     BaseTransactionHandler.arkListenAddress = arkAddress;
+    const spacesRootDir = path.join(`${options.spacesRootDir}`, '.spaces')
+    setRootDir(spacesRootDir)
+    logger.debug(`praxis spaces rootDir: ${spacesRootDir}`)
   
     if (options.authorizedCoinSenderPassphrase) {
       const ethAddress: string = `${options.ethAddress}`
